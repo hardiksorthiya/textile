@@ -1,0 +1,2 @@
+@include('layouts.sidebar-content')
+
