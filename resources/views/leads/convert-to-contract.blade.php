@@ -4,17 +4,17 @@
             <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Convert Lead to Contract</h1>
             <p class="text-muted mb-0">Convert lead #{{ $lead->id }} to a contract</p>
         </div>
-        <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary" style="border-radius: 8px;">
+        <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i>Back to Leads
         </a>
     </div>
 
     <div class="row g-4" x-data="contractForm()">
         <div class="col-12">
-            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%); border-radius: 12px;">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
                 <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas fa-file-contract text-white"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Contract Information</h2>
@@ -173,7 +173,7 @@
                         <div class="border-top pt-4 mt-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="fw-bold mb-0" style="color: #1f2937;">Machine Details</h5>
-                                <button type="button" @click="addMachine()" class="btn btn-sm btn-primary" style="border-radius: 8px;">
+                                <button type="button" @click="addMachine()" class="btn btn-sm btn-primary">
                                     <i class="fas fa-plus me-2"></i>Add Machine
                                 </button>
                             </div>
@@ -420,7 +420,7 @@
                                                     <div class="col-md-3">
                                                         <label class="form-label fw-semibold" style="color: #374151;">Machine Amount</label>
                                                         <div class="form-control bg-light" style="border-radius: 8px; border: 1px solid #e5e7eb; padding: 0.375rem 0.75rem; display: flex; align-items: center; min-height: 38px;">
-                                                            <span class="fw-bold" style="color: #8b5cf6;" x-text="'$' + ((parseFloat(machine.quantity) || 0) * (parseFloat(machine.amount) || 0)).toFixed(2)"></span>
+                                                            <span class="fw-bold" style="color: var(--primary-color);" x-text="'$' + ((parseFloat(machine.quantity) || 0) * (parseFloat(machine.amount) || 0)).toFixed(2)"></span>
                                                         </div>
                                                     </div>
                                                 </template>
@@ -444,7 +444,7 @@
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <span class="fw-bold" style="color: #374151; font-size: 1.1rem;">Total Machine Amount:</span>
-                                                    <span class="fw-bold" style="color: #8b5cf6; font-size: 1.2rem;" x-text="'$' + getTotalMachineAmount().toFixed(2)"></span>
+                                                    <span class="fw-bold" style="color: var(--primary-color); font-size: 1.2rem;" x-text="'$' + getTotalMachineAmount().toFixed(2)"></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -455,7 +455,7 @@
 
                         <div class="row mt-4">
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; border: none;">
+                                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                                     <i class="fas fa-save me-2"></i>Create Contract
                                 </button>
                             </div>
@@ -721,3 +721,6 @@
         </div>
     @endif
 </x-app-layout>
+
+
+

@@ -17,10 +17,12 @@ class StatusController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:statuses,name',
+            'requires_scheduling' => 'nullable|boolean',
         ]);
 
         Status::create([
             'name' => $request->name,
+            'requires_scheduling' => $request->has('requires_scheduling') ? (bool)$request->requires_scheduling : false,
         ]);
 
         return redirect()->route('statuses.index')
@@ -31,10 +33,12 @@ class StatusController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:statuses,name,' . $status->id,
+            'requires_scheduling' => 'nullable|boolean',
         ]);
 
         $status->update([
             'name' => $request->name,
+            'requires_scheduling' => $request->has('requires_scheduling') ? (bool)$request->requires_scheduling : false,
         ]);
 
         return redirect()->route('statuses.index')

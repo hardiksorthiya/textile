@@ -11,10 +11,10 @@
 
     <div class="row">
         <div class="col-lg-8 col-md-12 mx-auto">
-            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%); border-radius: 12px;">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
                 <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas fa-user-edit text-white"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Edit Team Member: {{ $user->name }}</h2>
@@ -78,11 +78,11 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                            <a href="{{ route('users.index') }}" class="btn btn-outline-secondary" style="border-radius: 8px;">
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                            <a href="{{ route('users.index') }}" class="btn btn-outline-secondary">
                                 Cancel
                             </a>
-                            <button type="submit" class="btn btn-primary" style="border-radius: 8px;">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-2"></i>Update Team Member
                             </button>
                         </div>
@@ -116,3 +116,6 @@
         </div>
     @endif
 </x-app-layout>
+
+
+

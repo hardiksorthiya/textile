@@ -33,6 +33,7 @@ use App\Http\Controllers\AreaController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\BusinessFirmController;
+use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -150,6 +151,14 @@ Route::middleware('auth')->group(function () {
         
         // Business Firm Routes
         Route::resource('business-firms', BusinessFirmController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        // Admin Settings
+        Route::get('/admin/settings', [SettingController::class, 'edit'])
+            ->name('settings.edit')
+            ->middleware('permission:view settings');
+        Route::post('/admin/settings', [SettingController::class, 'update'])
+            ->name('settings.update')
+            ->middleware('permission:edit settings');
     });
     
     // Permission-based Routes Examples

@@ -6,7 +6,7 @@
                     <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Leads Management</h1>
                     <p class="text-muted mb-0">View and manage all generated leads</p>
                 </div>
-                <a href="{{ route('leads.create') }}" class="btn btn-primary" style="border-radius: 8px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; border: none;">
+                <a href="{{ route('leads.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Create New Lead
                 </a>
             </div>
@@ -32,7 +32,7 @@
                 <h5 class="fw-bold mb-0" style="color: #1f2937;">
                     <i class="fas fa-filter me-2 text-primary"></i>Filters
                 </h5>
-                <button type="button" @click="filterSidebarOpen = false" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;">
+                <button type="button" @click="filterSidebarOpen = false" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -107,10 +107,10 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1" style="border-radius: 8px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; border: none;">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
                         <i class="fas fa-check me-2"></i>Apply
                     </button>
-                    <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary" style="border-radius: 8px;">
+                    <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-redo me-2"></i>Reset
                     </a>
                 </div>
@@ -118,18 +118,18 @@
         </div>
     </div>
 
-        <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%); border-radius: 12px;">
+        <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
         <div class="card-header border-0 pb-0" style="background: transparent;">
-            <div class="d-flex align-items-center justify-content-between py-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
+            <div class="d-flex align-items-center justify-content-between py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
                 <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                         <i class="fas fa-list text-white"></i>
                     </div>
                     <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">All Leads</h2>
-                    <span class="badge bg-purple-100 text-purple-800 ms-3">{{ $leads->total() }} Total</span>
+                    <span class="badge ms-3" style="background-color: color-mix(in srgb, #ef4444 15%, #ffffff); color: #dc2626; font-size: 0.875rem; padding: 0.35rem 0.65rem;">{{ $leads->total() }} Total</span>
                 </div>
  <!-- Search and Filter Bar -->
- <div class="card shadow-sm border-0 mb-3" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%); border-radius: 12px;">
+ <div class="card shadow-sm border-0 mb-3" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
     <div class="card-body p-3">
         <div class="d-flex align-items-center gap-3">
             <form method="GET" action="{{ route('leads.index') }}" class="flex-grow-1 d-flex align-items-center gap-2">
@@ -171,17 +171,17 @@
         <div class="card-body p-0">
             <div class="table-responsive" style="max-height: calc(100vh - 400px); overflow-y: auto;">
                 <table class="table table-hover mb-0 align-middle">
-                    <thead class="sticky-top" style="background: linear-gradient(to right, #f3e8ff, #e9d5ff) !important;">
+                    <thead class="sticky-top" style="background: linear-gradient(to right, color-mix(in srgb, var(--primary-color) 12%, #ffffff), color-mix(in srgb, var(--primary-color) 18%, #ffffff)) !important;">
                         <tr>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Sr.no</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Name</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Phone</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Location</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Business/Brand</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Categories</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Status</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Created</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important;">Actions</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Sr.no</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Name</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Phone</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Location</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Business/Brand</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Categories</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Status</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Created</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -201,9 +201,9 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     @if($lead->type === 'new' && $lead->business)
-                                        <span class="badge bg-purple-100 text-purple-800">{{ $lead->business->name }}</span>
+                                        <span class="badge" style="background-color: color-mix(in srgb, #ef4444 15%, #ffffff); color: #dc2626; font-size: 0.875rem; padding: 0.35rem 0.65rem;">{{ $lead->business->name }}</span>
                                     @elseif($lead->type === 'old' && $lead->brand)
-                                        <span class="badge bg-blue-100 text-blue-800">{{ $lead->brand->name }}</span>
+                                        <span class="badge" style="background-color: color-mix(in srgb, #3b82f6 15%, #ffffff); color: #2563eb; font-size: 0.875rem; padding: 0.35rem 0.65rem;">{{ $lead->brand->name }}</span>
                                     @else
                                         <small class="text-muted">-</small>
                                     @endif
@@ -212,7 +212,7 @@
                                     @if($lead->machineCategories->count() > 0)
                                         <div class="d-flex flex-wrap gap-1">
                                             @foreach($lead->machineCategories->take(2) as $category)
-                                                <span class="badge" style="background-color: #f3e8ff; color: #7c3aed; font-size: 0.75rem;">
+                                                <span class="badge" style="background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff); color: var(--primary-dark); font-size: 0.75rem;">
                                                     {{ $category->name }}
                                                 </span>
                                             @endforeach
@@ -232,19 +232,19 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="d-flex gap-2">
-                                        <a href="{{ route('leads.show', $lead) }}" class="btn btn-sm btn-outline-info" style="border-radius: 6px;" title="View">
+                                        <a href="{{ route('leads.show', $lead) }}" class="btn btn-sm btn-outline-info" title="View">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('leads.edit', $lead) }}" class="btn btn-sm btn-outline-primary" style="border-radius: 6px;" title="Edit">
+                                        <a href="{{ route('leads.edit', $lead) }}" class="btn btn-sm btn-outline-primary" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="{{ route('leads.convert-to-contract', $lead) }}" class="btn btn-sm btn-outline-success" style="border-radius: 6px;" title="Convert to Contract">
+                                        <a href="{{ route('leads.convert-to-contract', $lead) }}" class="btn btn-sm btn-outline-success" title="Convert to Contract">
                                             <i class="fas fa-user-check"></i>
                                         </a>
                                         <form action="{{ route('leads.destroy', $lead) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius: 6px;" title="Delete">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -267,7 +267,7 @@
             </div>
         </div>
         @if($leads->hasPages())
-            <div class="card-footer bg-transparent border-top" style="border-color: rgba(139, 92, 246, 0.2) !important;">
+            <div class="card-footer bg-transparent border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-muted">
                         Showing {{ $leads->firstItem() }} to {{ $leads->lastItem() }} of {{ $leads->total() }} leads
@@ -278,7 +278,7 @@
                 </div>
             </div>
         @else
-            <div class="card-footer bg-transparent border-top" style="border-color: rgba(139, 92, 246, 0.2) !important;">
+            <div class="card-footer bg-transparent border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
                 <div class="text-muted text-center">
                     Showing {{ $leads->count() }} of {{ $leads->total() }} leads
                 </div>
@@ -325,3 +325,6 @@
     @endif
     </div>
 </x-app-layout>
+
+
+

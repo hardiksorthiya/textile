@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('contract_machines', function (Blueprint $table) {
-            //
+        Schema::table('statuses', function (Blueprint $table) {
+            $table->boolean('requires_scheduling')->default(false)->after('name');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('contract_machines', function (Blueprint $table) {
-            //
+        Schema::table('statuses', function (Blueprint $table) {
+            $table->dropColumn('requires_scheduling');
         });
     }
 };

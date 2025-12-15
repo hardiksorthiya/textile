@@ -72,10 +72,10 @@
 
         <!-- Left Side: Add/Edit Seller Form (30%) -->
         <div class="col-lg-7 col-md-12">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%); border-radius: 12px;">
+            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
                 <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas text-white" :class="isEditing ? 'fa-edit' : 'fa-user-tie'"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;" x-text="isEditing ? 'Edit Seller' : 'Add Seller'"></h2>
@@ -122,8 +122,8 @@
                                        @forelse($categories ?? [] as $category)
                                            <div class="d-flex align-items-center py-2 px-3" 
                                                 x-data="{ hovered: false }"
-                                                :class="isCategorySelected({{ $category->id }}) ? 'bg-purple-50' : ''"
-                                                :style="isCategorySelected({{ $category->id }}) || hovered ? 'background-color: #f3e8ff;' : 'background-color: white;'"
+                                                :class="isCategorySelected({{ $category->id }}) ? 'bg-red-50' : ''"
+                                                :style="isCategorySelected({{ $category->id }}) || hovered ? 'background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff);' : 'background-color: white;'"
                                                 style="cursor: pointer; transition: background 0.2s; border-radius: 4px; margin: 2px;" 
                                                 @mouseenter="hovered = true"
                                                 @mouseleave="hovered = false"
@@ -245,7 +245,7 @@
                                </div>
                                <div style="max-height: 250px; overflow-y: auto;">
                                    <template x-for="(bank, index) in bankDetails" :key="index">
-                                       <div class="border rounded p-3 mb-2" style="border-color: rgba(139, 92, 246, 0.2) !important; background: white;">
+                                       <div class="border rounded p-3 mb-2" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important; background: white;">
                                            <div class="d-flex justify-content-between align-items-center mb-2">
                                                <small class="text-muted fw-semibold">Bank Detail <span x-text="index + 1"></span></small>
                                                <button type="button" @click="removeBankDetail(index)" class="btn btn-sm btn-outline-danger" x-show="bankDetails.length > 1">
@@ -282,7 +282,7 @@
                                </div>
                            </div>
 
-                           <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; border: none;">
+                           <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                                <i class="fas fa-plus me-2"></i>Add Seller
                            </button>
                        </form>
@@ -329,8 +329,8 @@
                                            @forelse($categories ?? [] as $category)
                                                <div class="d-flex align-items-center py-2 px-3" 
                                                     x-data="{ hovered: false }"
-                                                    :class="isCategorySelected({{ $category->id }}) ? 'bg-purple-50' : ''"
-                                                    :style="isCategorySelected({{ $category->id }}) || hovered ? 'background-color: #f3e8ff;' : 'background-color: white;'"
+                                                    :class="isCategorySelected({{ $category->id }}) ? 'bg-red-50' : ''"
+                                                    :style="isCategorySelected({{ $category->id }}) || hovered ? 'background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff);' : 'background-color: white;'"
                                                     style="cursor: pointer; transition: background 0.2s; border-radius: 4px; margin: 2px;" 
                                                     @mouseenter="hovered = true"
                                                     @mouseleave="hovered = false"
@@ -435,7 +435,7 @@
                                    </div>
                                    <div style="max-height: 250px; overflow-y: auto;">
                                        <template x-for="(bank, index) in bankDetails" :key="index">
-                                           <div class="border rounded p-3 mb-2" style="border-color: rgba(139, 92, 246, 0.2) !important; background: white;">
+                                           <div class="border rounded p-3 mb-2" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important; background: white;">
                                                <div class="d-flex justify-content-between align-items-center mb-2">
                                                    <small class="text-muted fw-semibold">Bank Detail <span x-text="index + 1"></span></small>
                                                    <button type="button" @click="removeBankDetail(index)" class="btn btn-sm btn-outline-danger" x-show="bankDetails.length > 1">
@@ -476,7 +476,7 @@
                                    <button type="button" @click="cancelEdit()" class="btn btn-outline-secondary flex-grow-1" style="border-radius: 8px;">
                                        Cancel
                                    </button>
-                                   <button type="submit" class="btn btn-primary flex-grow-1" style="border-radius: 8px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; border: none;">
+                                   <button type="submit" class="btn btn-primary flex-grow-1">
                                        <i class="fas fa-save me-2"></i>Update
                                    </button>
                                </div>
@@ -489,10 +489,10 @@
 
         <!-- Right Side: Seller List Table (70%) -->
         <div class="col-lg-5 col-md-12">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%); border-radius: 12px;">
+            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
                 <div class="card-header border-0 pb-0" style="background: transparent;">
-                    <div class="d-flex align-items-center py-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="d-flex align-items-center py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas fa-list text-white"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Seller List</h2>
@@ -501,11 +501,11 @@
                 <div class="card-body p-0">
                     <div class="table-responsive" style="max-height: calc(100vh - 350px); overflow-y: auto; overflow-x: hidden;">
                         <table class="table table-hover mb-0 align-middle">
-                            <thead class="sticky-top" style="background: linear-gradient(to right, #f3e8ff, #e9d5ff) !important;">
+                            <thead class="sticky-top" style="background: linear-gradient(to right, color-mix(in srgb, var(--primary-color) 12%, #ffffff), color-mix(in srgb, var(--primary-color) 18%, #ffffff)) !important;">
                                 <tr>
-                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important; border-bottom: 1px solid #d8b4fe !important;">Seller</th>
-                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important; border-bottom: 1px solid #d8b4fe !important;">Country</th>
-                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #4c1d95 !important; border-bottom: 1px solid #d8b4fe !important;">Actions</th>
+                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important; border-bottom: 1px solid #d8b4fe !important;">Seller</th>
+                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important; border-bottom: 1px solid #d8b4fe !important;">Country</th>
+                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important; border-bottom: 1px solid #d8b4fe !important;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -514,7 +514,7 @@
                                         <td class="px-4 py-3">
                                             <div class="d-flex align-items-center">
                                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3 shadow-sm" 
-                                                     style="width: 45px; height: 45px; font-weight: 600; font-size: 16px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);">
+                                                     style="width: 45px; height: 45px; font-weight: 600; font-size: 16px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);">
                                                     {{ strtoupper(substr($seller->seller_name, 0, 1)) }}
                                                 </div>
                                                 <div class="fw-semibold" style="color: #1f2937; font-size: 0.95rem;">{{ $seller->seller_name }}</div>
@@ -544,9 +544,7 @@
                                                         })"
                                                         class="btn btn-sm btn-outline-primary" 
                                                         title="Edit Seller"
-                                                        style="border-radius: 6px; border-color: #8b5cf6; color: #8b5cf6; transition: all 0.2s ease;"
-                                                        onmouseover="this.style.background='#8b5cf6'; this.style.color='white';"
-                                                        onmouseout="this.style.background='transparent'; this.style.color='#8b5cf6';">
+>
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <form action="{{ route('sellers.destroy', $seller) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this seller?');">
@@ -555,9 +553,7 @@
                                                     <button type="submit" 
                                                             class="btn btn-sm btn-outline-danger" 
                                                             title="Delete Seller"
-                                                            style="border-radius: 6px; border-color: #ef4444; color: #ef4444; transition: all 0.2s ease;"
-                                                            onmouseover="this.style.background='#ef4444'; this.style.color='white';"
-                                                            onmouseout="this.style.background='transparent'; this.style.color='#ef4444';">
+>
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
@@ -580,7 +576,7 @@
                     </div>
                 </div>
                 @if($sellers->hasPages())
-                    <div class="card-footer bg-transparent border-top" style="border-color: rgba(139, 92, 246, 0.2) !important;">
+                    <div class="card-footer bg-transparent border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
                         <div class="d-flex justify-content-center">
                             {{ $sellers->links() }}
                         </div>
@@ -630,7 +626,7 @@
 
     <style>
         .table-hover tbody tr:hover {
-            background-color: #f3e8ff !important;
+            background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff) !important;
             transform: scale(1.01);
             transition: all 0.2s ease;
         }
@@ -642,3 +638,6 @@
         }
     </style>
 </x-app-layout>
+
+
+

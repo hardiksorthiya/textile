@@ -22,6 +22,9 @@ class Lead extends Model
         'brand_id',
         'machine_quantity',
         'running_since',
+        'needs_scheduling',
+        'scheduled_date',
+        'scheduled_time',
     ];
 
     public function business()

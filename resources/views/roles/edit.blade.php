@@ -13,10 +13,10 @@
     <div class="row g-4">
         <!-- Left Side: Role Form with Permissions (70%) -->
         <div class="col-lg-8 col-md-12">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%);">
+            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%);">
                 <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas fa-user-tag text-white"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Edit Role: {{ $role->name }}</h2>
@@ -57,12 +57,12 @@
                                 <div class="row g-3">
                                     @foreach($permissionGroups as $groupName => $permissionNames)
                                         <div class="col-12">
-                                            <div class="border rounded p-3" style="border-color: rgba(139, 92, 246, 0.2) !important; background: white;">
+                                            <div class="border rounded p-3" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important; background: white;">
                                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                                     <h6 class="fw-semibold mb-0" style="color: #1f2937;">{{ $groupName }}</h6>
                                                     <button type="button" 
                                                             onclick="toggleGroup('group-{{ $loop->index }}')"
-                                                            class="btn btn-sm text-primary p-0" style="font-size: 0.75rem;">
+                                                            class="btn btn-sm p-0">
                                                         <i class="fas fa-check-double me-1"></i>Select All
                                                     </button>
                                                 </div>
@@ -72,9 +72,9 @@
                                                             <div class="col-md-6 col-lg-4 p-1">
                                                                 <label for="permission-{{ $permission->id }}" class="d-block m-0" style="cursor: pointer;">
                                                                     <div class="permission-box p-3 rounded border position-relative" 
-                                                                         style="background: rgba(139, 92, 246, 0.05); border: 2px solid rgba(139, 92, 246, 0.2) !important; transition: all 0.3s ease; min-height: 60px;"
-                                                                         onmouseover="this.style.background='rgba(139, 92, 246, 0.1)'; this.style.borderColor='rgba(139, 92, 246, 0.4)'"
-                                                                         onmouseout="this.style.background='rgba(139, 92, 246, 0.05)'; this.style.borderColor='rgba(139, 92, 246, 0.2)'">
+                                                                         style="background: color-mix(in srgb, var(--primary-color) 5%, white); border: 2px solid color-mix(in srgb, var(--primary-color) 20%, transparent) !important; transition: all 0.3s ease; min-height: 60px;"
+                                                                         onmouseover="this.style.background='color-mix(in srgb, var(--primary-color) 10%, white)'; this.style.borderColor='color-mix(in srgb, var(--primary-color) 40%, transparent)'"
+                                                                         onmouseout="this.style.background='color-mix(in srgb, var(--primary-color) 5%, white)'; this.style.borderColor='color-mix(in srgb, var(--primary-color) 20%, transparent)'">
                                                                         <div class="d-flex align-items-center">
                                                                             <input class="form-check-input me-3" 
                                                                                    type="checkbox" 
@@ -83,7 +83,7 @@
                                                                                    id="permission-{{ $permission->id }}"
                                                                                    {{ (old('permissions') && in_array($permission->id, old('permissions'))) || in_array($permission->id, $rolePermissionIds) ? 'checked' : '' }}
                                                                                    onchange="updateBoxStyle(this)"
-                                                                                   style="width: 18px; height: 18px; border-color: #8b5cf6; cursor: pointer; margin-top: 0;">
+                                                                                   style="width: 18px; height: 18px; border-color: var(--primary-color); cursor: pointer; margin-top: 0;">
                                                                             <span class="flex-grow-1" style="font-size: 0.875rem; color: #4b5563; font-weight: 500;">
                                                                                 {{ $permission->name }}
                                                                             </span>
@@ -106,11 +106,11 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                            <a href="{{ route('roles.create') }}" class="btn btn-outline-secondary" style="border-radius: 8px;">
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                            <a href="{{ route('roles.create') }}" class="btn btn-outline-secondary">
                                 Cancel
                             </a>
-                            <button type="submit" class="btn btn-primary" style="border-radius: 8px;">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-2"></i>Update Role
                             </button>
                         </div>
@@ -121,10 +121,10 @@
 
         <!-- Right Side: Role List (30%) -->
         <div class="col-lg-4 col-md-12">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%);">
+            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%);">
                 <div class="card-header border-0 pb-0" style="background: transparent;">
-                    <div class="d-flex align-items-center py-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                    <div class="d-flex align-items-center py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas fa-list text-white"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Role List</h2>
@@ -133,7 +133,7 @@
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         @forelse($roles as $r)
-                            <div class="list-group-item border-0 py-3 px-4 {{ $r->id == $role->id ? 'bg-light' : '' }}" style="border-bottom: 1px solid rgba(139, 92, 246, 0.1) !important;">
+                            <div class="list-group-item border-0 py-3 px-4 {{ $r->id == $role->id ? 'bg-light' : '' }}" style="border-bottom: 1px solid color-mix(in srgb, var(--primary-color) 10%, transparent) !important;">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div class="flex-grow-1">
                                         <h6 class="fw-bold mb-1" style="color: #1f2937;">
@@ -242,12 +242,12 @@
         function updateBoxStyle(checkbox) {
             const box = checkbox.closest('.permission-box');
             if (checkbox.checked) {
-                box.style.background = 'rgba(139, 92, 246, 0.15)';
-                box.style.borderColor = '#8b5cf6';
-                box.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.2)';
+                box.style.background = 'color-mix(in srgb, var(--primary-color) 15%, white)';
+                box.style.borderColor = 'var(--primary-color)';
+                box.style.boxShadow = '0 2px 8px color-mix(in srgb, var(--primary-color) 20%, transparent)';
             } else {
-                box.style.background = 'rgba(139, 92, 246, 0.05)';
-                box.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                box.style.background = 'color-mix(in srgb, var(--primary-color) 5%, white)';
+                box.style.borderColor = 'color-mix(in srgb, var(--primary-color) 20%, transparent)';
                 box.style.boxShadow = 'none';
             }
         }
@@ -272,3 +272,4 @@
         }
     </style>
 </x-app-layout>
+

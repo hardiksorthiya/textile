@@ -5,10 +5,10 @@
             <p class="text-muted mb-0">Lead details and information</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary" style="border-radius: 8px;">
+            <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to Leads
             </a>
-            <a href="{{ route('leads.edit', $lead) }}" class="btn btn-primary" style="border-radius: 8px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; border: none;">
+            <a href="{{ route('leads.edit', $lead) }}" class="btn btn-primary">
                 <i class="fas fa-edit me-2"></i>Edit Lead
             </a>
         </div>
@@ -16,10 +16,10 @@
 
     <div class="row g-4">
         <div class="col-12">
-            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%); border-radius: 12px;">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
                 <div class="card-header border-0 pb-0" style="background: transparent;">
-                    <div class="d-flex align-items-center py-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="d-flex align-items-center py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas fa-user-friends text-white"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Lead Information</h2>
@@ -80,7 +80,7 @@
                                     <label class="form-label fw-semibold text-muted" style="font-size: 0.875rem;">Business</label>
                                     <div>
                                         @if($lead->business)
-                                            <span class="badge bg-purple-100 text-purple-800" style="font-size: 0.875rem;">{{ $lead->business->name }}</span>
+                                            <span class="badge" style="background-color: color-mix(in srgb, #ef4444 15%, #ffffff); color: #dc2626; font-size: 0.875rem; padding: 0.35rem 0.65rem;">{{ $lead->business->name }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -101,7 +101,7 @@
                                     <label class="form-label fw-semibold text-muted" style="font-size: 0.875rem;">Brand of Machine</label>
                                     <div>
                                         @if($lead->brand)
-                                            <span class="badge bg-blue-100 text-blue-800" style="font-size: 0.875rem;">{{ $lead->brand->name }}</span>
+                                            <span class="badge" style="background-color: color-mix(in srgb, #3b82f6 15%, #ffffff); color: #2563eb; font-size: 0.875rem; padding: 0.35rem 0.65rem;">{{ $lead->brand->name }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -131,7 +131,7 @@
                                 @if($lead->machineCategories->count() > 0)
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach($lead->machineCategories as $category)
-                                            <span class="badge" style="background-color: #f3e8ff; color: #7c3aed; font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                            <span class="badge" style="background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff); color: var(--primary-dark); font-size: 0.875rem; padding: 0.5rem 0.75rem;">
                                                 {{ $category->name }}
                                             </span>
                                         @endforeach
@@ -168,3 +168,7 @@
         </div>
     </div>
 </x-app-layout>
+
+
+
+

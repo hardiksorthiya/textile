@@ -115,6 +115,9 @@ class LeadController extends Controller
             'status_id' => 'required|exists:statuses,id',
             'categories' => 'required|array',
             'categories.*' => 'exists:machine_categories,id',
+            'needs_scheduling' => 'nullable|boolean',
+            'scheduled_date' => 'nullable|date|required_if:needs_scheduling,1',
+            'scheduled_time' => 'nullable|date_format:H:i|required_if:needs_scheduling,1',
         ];
 
         if ($request->type === 'new') {
@@ -136,6 +139,9 @@ class LeadController extends Controller
             'area_id' => $request->area_id,
             'quantity' => $request->quantity,
             'status_id' => $request->status_id,
+            'needs_scheduling' => $request->has('needs_scheduling') ? (bool)$request->needs_scheduling : false,
+            'scheduled_date' => $request->needs_scheduling ? $request->scheduled_date : null,
+            'scheduled_time' => $request->needs_scheduling ? $request->scheduled_time : null,
         ];
 
         if ($request->type === 'new') {
@@ -180,6 +186,9 @@ class LeadController extends Controller
             'status_id' => 'required|exists:statuses,id',
             'categories' => 'required|array',
             'categories.*' => 'exists:machine_categories,id',
+            'needs_scheduling' => 'nullable|boolean',
+            'scheduled_date' => 'nullable|date|required_if:needs_scheduling,1',
+            'scheduled_time' => 'nullable|date_format:H:i|required_if:needs_scheduling,1',
         ];
 
         if ($request->type === 'new') {
@@ -201,6 +210,9 @@ class LeadController extends Controller
             'area_id' => $request->area_id,
             'quantity' => $request->quantity,
             'status_id' => $request->status_id,
+            'needs_scheduling' => $request->has('needs_scheduling') ? (bool)$request->needs_scheduling : false,
+            'scheduled_date' => $request->needs_scheduling ? $request->scheduled_date : null,
+            'scheduled_time' => $request->needs_scheduling ? $request->scheduled_time : null,
         ];
 
         if ($request->type === 'new') {

@@ -1,4 +1,4 @@
-@props([
+﻿@props([
     'name',
     'show' => false,
     'maxWidth' => '2xl'
@@ -76,3 +76,6 @@ $maxWidth = [
         {{ $slot }}
     </div>
 </div>
+
+
+

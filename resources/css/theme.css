@@ -1,0 +1,233 @@
+:root {
+    --primary-color: #e74343;
+    --primary-dark: #9f2323;
+    --primary-light: #fc9e9e;
+    --primary-lighter: #fcc7c7;
+}
+
+/* Map old purple utility classes to theme variables for easy theming */
+.text-purple-600,
+.text-purple-700,
+.text-purple-800,
+.hover\:text-purple-600:hover,
+.hover\:text-purple-700:hover {
+    color: var(--primary-color) !important;
+}
+
+.bg-purple-50,
+.bg-purple-100,
+.bg-purple-200,
+.bg-purple-300,
+.bg-purple-400,
+.bg-purple-500,
+.bg-purple-600,
+.hover\:bg-purple-50:hover,
+.hover\:bg-purple-100:hover,
+.hover\:bg-purple-200:hover,
+.hover\:bg-purple-300:hover,
+.hover\:bg-purple-400:hover,
+.hover\:bg-purple-500:hover,
+.hover\:bg-purple-600:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 15%, white) !important;
+}
+
+.bg-purple-500,
+.bg-purple-600,
+.bg-purple-700,
+.bg-purple-800 {
+    background-color: var(--primary-color) !important;
+}
+
+.border-purple-500,
+.border-purple-600,
+.border-purple-700,
+.focus\:border-purple-500:focus,
+.focus\:border-purple-600:focus {
+    border-color: var(--primary-color) !important;
+}
+
+.focus\:ring-purple-500:focus,
+.focus\:ring-purple-600:focus {
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary-color) 45%, transparent) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+    border: none !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px color-mix(in srgb, var(--primary-color) 30%, transparent) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%) !important;
+    border-color: var(--primary-dark) !important;
+    color: white !important;
+    box-shadow: 0 6px 12px color-mix(in srgb, var(--primary-color) 40%, transparent) !important;
+    transform: translateY(-2px) !important;
+}
+
+.btn-outline-primary,
+.btn-outline-primary.btn-sm,
+button.btn-outline-primary,
+a.btn-outline-primary {
+    color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    background-color: transparent !important;
+    border-width: 1px !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.btn-outline-primary.btn-sm:hover,
+.btn-outline-primary.btn-sm:focus,
+.btn-outline-primary.btn-sm:active,
+button.btn-outline-primary:hover,
+button.btn-outline-primary:focus,
+a.btn-outline-primary:hover,
+a.btn-outline-primary:focus {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.btn-outline-primary i,
+.btn-outline-primary.btn-sm i {
+    color: inherit !important;
+}
+
+.card {
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid color-mix(in srgb, var(--primary-color) 10%, transparent);
+}
+
+.card:hover {
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--primary-color) 15%, transparent);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary-color) 25%, transparent);
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #f3f4f6 100%);
+    color: #4b5563;
+    font-weight: 600;
+    border-bottom: 2px solid var(--primary-lighter);
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 5%, transparent);
+    transform: scale(1.01);
+}
+
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+    border-radius: 6px;
+}
+
+.bg-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.page-link {
+    color: var(--primary-color);
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-color: var(--primary-color);
+}
+
+.page-link:hover {
+    color: var(--primary-dark);
+    background-color: var(--primary-lighter);
+}
+
+/* Sidebar Navigation Styles - High specificity to override Tailwind */
+nav a.sidebar-link,
+nav button.sidebar-link,
+aside a.sidebar-link,
+aside button.sidebar-link {
+    color: #374151 !important;
+    transition: all 0.2s ease !important;
+}
+
+nav a.sidebar-link:hover,
+nav button.sidebar-link:hover,
+aside a.sidebar-link:hover,
+aside button.sidebar-link:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 10%, white) !important;
+    color: var(--primary-color) !important;
+}
+
+nav a.sidebar-active,
+nav button.sidebar-active,
+aside a.sidebar-active,
+aside button.sidebar-active,
+nav a.sidebar-link.sidebar-active,
+nav button.sidebar-link.sidebar-active,
+aside a.sidebar-link.sidebar-active,
+aside button.sidebar-link.sidebar-active {
+    background-color: color-mix(in srgb, var(--primary-color) 10%, white) !important;
+    color: var(--primary-color) !important;
+    font-weight: 500 !important;
+}
+
+/* Override Tailwind text-gray classes with higher specificity */
+nav a.sidebar-link.text-gray-700,
+nav button.sidebar-link.text-gray-700,
+aside a.sidebar-link.text-gray-700,
+aside button.sidebar-link.text-gray-700 {
+    color: #374151 !important;
+}
+
+nav a.sidebar-link:hover.text-gray-700,
+nav button.sidebar-link:hover.text-gray-700,
+nav a.sidebar-active.text-gray-700,
+nav button.sidebar-active.text-gray-700,
+aside a.sidebar-link:hover.text-gray-700,
+aside button.sidebar-link:hover.text-gray-700,
+aside a.sidebar-active.text-gray-700,
+aside button.sidebar-active.text-gray-700 {
+    color: var(--primary-color) !important;
+}
+
+nav a.sidebar-link.text-gray-600,
+nav button.sidebar-link.text-gray-600,
+aside a.sidebar-link.text-gray-600,
+aside button.sidebar-link.text-gray-600 {
+    color: #4b5563 !important;
+}
+
+nav a.sidebar-link:hover.text-gray-600,
+nav button.sidebar-link:hover.text-gray-600,
+nav a.sidebar-active.text-gray-600,
+nav button.sidebar-active.text-gray-600,
+aside a.sidebar-link:hover.text-gray-600,
+aside button.sidebar-link:hover.text-gray-600,
+aside a.sidebar-active.text-gray-600,
+aside button.sidebar-active.text-gray-600 {
+    color: var(--primary-color) !important;
+}

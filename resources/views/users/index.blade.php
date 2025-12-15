@@ -26,10 +26,10 @@
     }">
         <!-- Left Side: Add/Edit Team Member Form (30%) -->
         <div class="col-lg-4 col-md-12">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%);">
+            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%);">
                 <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas text-white" :class="isEditing ? 'fa-user-edit' : 'fa-user-plus'"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;" x-text="isEditing ? 'Edit Team Member' : 'Add Team Member'"></h2>
@@ -94,7 +94,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" style="border-radius: 8px;">
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                                 <i class="fas fa-plus me-2"></i>Add Team Member
                             </button>
                         </form>
@@ -151,10 +151,10 @@
                                     </select>
                                 </div>
                                 <div class="d-flex gap-2">
-                                    <button type="button" @click="cancelEdit()" class="btn btn-outline-secondary flex-grow-1" style="border-radius: 8px;">
+                                    <button type="button" @click="cancelEdit()" class="btn btn-outline-secondary flex-grow-1">
                                         Cancel
                                     </button>
-                                    <button type="submit" class="btn btn-primary flex-grow-1" style="border-radius: 8px;">
+                                    <button type="submit" class="btn btn-primary flex-grow-1">
                                         <i class="fas fa-save me-2"></i>Update
                                     </button>
                                 </div>
@@ -167,10 +167,10 @@
 
         <!-- Right Side: Team List Table (70%) -->
         <div class="col-lg-8 col-md-12">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%);">
+            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%);">
                 <div class="card-header border-0 pb-0" style="background: transparent;">
-                    <div class="d-flex align-items-center py-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="d-flex align-items-center py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas fa-users text-white"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Team List</h2>
@@ -193,7 +193,7 @@
                                         <td class="px-4 py-3">
                                             <div class="d-flex align-items-center">
                                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3 shadow-sm" 
-                                                     style="width: 45px; height: 45px; font-weight: 600; font-size: 16px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                                                     style="width: 45px; height: 45px; font-weight: 600; font-size: 16px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                                                     {{ strtoupper(substr($user->name, 0, 1)) }}
                                                 </div>
                                                 <div>
@@ -210,7 +210,7 @@
                                                 @foreach($user->roles as $role)
                                                     <span class="badge me-1" style="
                                                         @if($role->name == 'Super Admin') background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;
-                                                        @elseif($role->name == 'Admin') background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white;
+                                                        @elseif($role->name == 'Admin') background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); color: white;
                                                         @elseif($role->name == 'Manager') background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;
                                                         @elseif($role->name == 'Staff') background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;
                                                         @else background: #6b7280; color: white;
@@ -260,7 +260,7 @@
                     </div>
                 </div>
                 @if($users->hasPages())
-                    <div class="card-footer bg-transparent border-top" style="border-color: rgba(139, 92, 246, 0.2) !important;">
+                    <div class="card-footer bg-transparent border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
                         <div class="d-flex justify-content-center">
                             {{ $users->links() }}
                         </div>
@@ -307,3 +307,6 @@
         </div>
     @endif
 </x-app-layout>
+
+
+

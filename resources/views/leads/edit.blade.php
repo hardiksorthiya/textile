@@ -4,7 +4,7 @@
             <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Edit Lead</h1>
             <p class="text-muted mb-0">Update lead information</p>
         </div>
-        <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary" style="border-radius: 8px;">
+        <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i>Back to Leads
         </a>
     </div>
@@ -12,10 +12,10 @@
     <div class="row g-4" x-data="leadForm()">
         <!-- FULL WIDTH FORM -->
         <div class="col-12">
-            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, #faf5ff 100%); border-radius: 12px;">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
                 <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: rgba(139, 92, 246, 0.2) !important;">
-                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important;">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
                             <i class="fas fa-edit text-white"></i>
                         </div>
                         <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Edit Lead</h2>
@@ -133,8 +133,8 @@
                                             @forelse($categories ?? [] as $category)
                                                 <div class="d-flex align-items-center py-2 px-3" 
                                                      x-data="{ hovered: false }"
-                                                     :class="isCategorySelected({{ $category->id }}) ? 'bg-purple-50' : ''"
-                                                     :style="isCategorySelected({{ $category->id }}) || hovered ? 'background-color: #f3e8ff;' : 'background-color: white;'"
+                                                     :class="isCategorySelected({{ $category->id }}) ? 'bg-red-50' : ''"
+                                                     :style="isCategorySelected({{ $category->id }}) || hovered ? 'background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff);' : 'background-color: white;'"
                                                      style="cursor: pointer; transition: background 0.2s; border-radius: 4px; margin: 2px;" 
                                                      @mouseenter="hovered = true"
                                                      @mouseleave="hovered = false"
@@ -176,21 +176,80 @@
 
                                 <div class="col-md-12">
                                     <label class="form-label fw-semibold" style="color: #374151;">Status <span class="text-danger">*</span></label>
-                                    <select name="status_id" required class="form-select @error('status_id') is-invalid @enderror" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    <select name="status_id" required 
+                                            x-model="selectedStatusId"
+                                            @change="checkSchedulingStatus()"
+                                            class="form-select @error('status_id') is-invalid @enderror" 
+                                            style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                         <option value="">Select Status</option>
                                         @foreach($statuses as $status)
-                                            <option value="{{ $status->id }}" {{ $lead->status_id == $status->id ? 'selected' : '' }}>{{ $status->name }}</option>
+                                            <option value="{{ $status->id }}" 
+                                                    data-requires-scheduling="{{ $status->requires_scheduling ? 1 : 0 }}"
+                                                    {{ $lead->status_id == $status->id ? 'selected' : '' }}>{{ $status->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('status_id')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
+
+                                <!-- Scheduling Toggle and Fields -->
+                                <div class="col-md-12" x-show="showSchedulingToggle" x-cloak>
+                                    <div class="card p-3 mb-3" style="background-color: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px;">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <label class="form-label fw-semibold mb-0" style="color: #374151;">
+                                                <i class="fas fa-calendar-alt me-2"></i>Schedule Date & Time
+                                            </label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       id="needs_scheduling_new_edit"
+                                                       x-model="needsScheduling"
+                                                       style="cursor: pointer; width: 3rem; height: 1.5rem;"
+                                                       name="needs_scheduling"
+                                                       value="1">
+                                                <label class="form-check-label ms-2" for="needs_scheduling_new_edit" style="cursor: pointer;">
+                                                    <span x-text="needsScheduling ? 'Enabled' : 'Disabled'"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div x-show="needsScheduling" x-cloak class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Scheduled Date <span class="text-danger">*</span></label>
+                                                <input type="date" 
+                                                       name="scheduled_date" 
+                                                       x-model="scheduledDate"
+                                                       :required="needsScheduling"
+                                                       min="{{ date('Y-m-d') }}"
+                                                       value="{{ old('scheduled_date', $lead->scheduled_date ? \Carbon\Carbon::parse($lead->scheduled_date)->format('Y-m-d') : '') }}"
+                                                       class="form-control @error('scheduled_date') is-invalid @enderror" 
+                                                       style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                                @error('scheduled_date')
+                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Scheduled Time <span class="text-danger">*</span></label>
+                                                <input type="time" 
+                                                       name="scheduled_time" 
+                                                       x-model="scheduledTime"
+                                                       :required="needsScheduling"
+                                                       value="{{ old('scheduled_time', $lead->scheduled_time ? \Carbon\Carbon::parse($lead->scheduled_time)->format('H:i') : '') }}"
+                                                       class="form-control @error('scheduled_time') is-invalid @enderror" 
+                                                       style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                                @error('scheduled_time')
+                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row mt-3">
                                 <div class="col-12">
-                                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; border: none;">
+                                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                                         <i class="fas fa-save me-2"></i>Update Lead
                                     </button>
                                 </div>
@@ -326,8 +385,8 @@
                                             @forelse($categories ?? [] as $category)
                                                 <div class="d-flex align-items-center py-2 px-3" 
                                                      x-data="{ hovered: false }"
-                                                     :class="isCategorySelected({{ $category->id }}) ? 'bg-purple-50' : ''"
-                                                     :style="isCategorySelected({{ $category->id }}) || hovered ? 'background-color: #f3e8ff;' : 'background-color: white;'"
+                                                     :class="isCategorySelected({{ $category->id }}) ? 'bg-red-50' : ''"
+                                                     :style="isCategorySelected({{ $category->id }}) || hovered ? 'background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff);' : 'background-color: white;'"
                                                      style="cursor: pointer; transition: background 0.2s; border-radius: 4px; margin: 2px;" 
                                                      @mouseenter="hovered = true"
                                                      @mouseleave="hovered = false"
@@ -359,21 +418,80 @@
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold" style="color: #374151;">Status <span class="text-danger">*</span></label>
-                                    <select name="status_id" required class="form-select @error('status_id') is-invalid @enderror" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    <select name="status_id" required 
+                                            x-model="selectedStatusId"
+                                            @change="checkSchedulingStatus()"
+                                            class="form-select @error('status_id') is-invalid @enderror" 
+                                            style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                         <option value="">Select Status</option>
                                         @foreach($statuses as $status)
-                                            <option value="{{ $status->id }}" {{ $lead->status_id == $status->id ? 'selected' : '' }}>{{ $status->name }}</option>
+                                            <option value="{{ $status->id }}" 
+                                                    data-requires-scheduling="{{ $status->requires_scheduling ? 1 : 0 }}"
+                                                    {{ $lead->status_id == $status->id ? 'selected' : '' }}>{{ $status->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('status_id')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
+
+                                <!-- Scheduling Toggle and Fields -->
+                                <div class="col-md-12" x-show="showSchedulingToggle" x-cloak>
+                                    <div class="card p-3 mb-3" style="background-color: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px;">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <label class="form-label fw-semibold mb-0" style="color: #374151;">
+                                                <i class="fas fa-calendar-alt me-2"></i>Schedule Date & Time
+                                            </label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       id="needs_scheduling_old_edit"
+                                                       x-model="needsScheduling"
+                                                       style="cursor: pointer; width: 3rem; height: 1.5rem;"
+                                                       name="needs_scheduling"
+                                                       value="1">
+                                                <label class="form-check-label ms-2" for="needs_scheduling_old_edit" style="cursor: pointer;">
+                                                    <span x-text="needsScheduling ? 'Enabled' : 'Disabled'"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div x-show="needsScheduling" x-cloak class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Scheduled Date <span class="text-danger">*</span></label>
+                                                <input type="date" 
+                                                       name="scheduled_date" 
+                                                       x-model="scheduledDate"
+                                                       :required="needsScheduling"
+                                                       min="{{ date('Y-m-d') }}"
+                                                       value="{{ old('scheduled_date', $lead->scheduled_date ? \Carbon\Carbon::parse($lead->scheduled_date)->format('Y-m-d') : '') }}"
+                                                       class="form-control @error('scheduled_date') is-invalid @enderror" 
+                                                       style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                                @error('scheduled_date')
+                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Scheduled Time <span class="text-danger">*</span></label>
+                                                <input type="time" 
+                                                       name="scheduled_time" 
+                                                       x-model="scheduledTime"
+                                                       :required="needsScheduling"
+                                                       value="{{ old('scheduled_time', $lead->scheduled_time ? \Carbon\Carbon::parse($lead->scheduled_time)->format('H:i') : '') }}"
+                                                       class="form-control @error('scheduled_time') is-invalid @enderror" 
+                                                       style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                                @error('scheduled_time')
+                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row mt-3">
                                 <div class="col-12">
-                                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" style="border-radius: 8px; background: linear-gradient(45deg, #8b5cf6, #a78bfa) !important; border: none;">
+                                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                                         <i class="fas fa-save me-2"></i>Update Lead
                                     </button>
                                 </div>
@@ -391,15 +509,68 @@
                 leadType: '{{ $lead->type }}',
                 selectedCategories: @json($lead->machineCategories->pluck('id')->map(fn($id) => (string)$id)),
                 categoryDropdownOpen: false,
+                selectedStatusId: '{{ $lead->status_id }}',
+                showSchedulingToggle: false,
+                needsScheduling: {{ $lead->needs_scheduling ? 'true' : 'false' }},
+                scheduledDate: '{{ $lead->scheduled_date ? \Carbon\Carbon::parse($lead->scheduled_date)->format('Y-m-d') : '' }}',
+                scheduledTime: '{{ $lead->scheduled_time ? \Carbon\Carbon::parse($lead->scheduled_time)->format('H:i') : '' }}',
 
                 init() {
                     // Initialize with current lead type
                     this.leadType = '{{ $lead->type }}';
+                    
+                    // Check if current status requires scheduling
+                    if (this.selectedStatusId !== '') {
+                        const statusSelect = document.querySelector('select[name="status_id"]');
+                        if (statusSelect) {
+                            const selectedOption = statusSelect.options[statusSelect.selectedIndex];
+                            const requiresScheduling = selectedOption ? parseInt(selectedOption.getAttribute('data-requires-scheduling')) === 1 : false;
+                            
+                            // Show scheduling toggle if:
+                            // 1. Status requires scheduling, OR
+                            // 2. Lead already has scheduling data (even if status doesn't require it)
+                            this.showSchedulingToggle = requiresScheduling || this.needsScheduling;
+                            
+                            // If status requires scheduling, automatically enable it
+                            if (requiresScheduling) {
+                                this.needsScheduling = true;
+                            }
+                        }
+                    }
                 },
 
                 switchFormType(type) {
                     this.leadType = type;
                     this.categoryDropdownOpen = false;
+                },
+
+                checkSchedulingStatus() {
+                    // Check if a status is selected and if it requires scheduling
+                    if (this.selectedStatusId !== '') {
+                        const statusSelect = document.querySelector('select[name="status_id"]');
+                        const selectedOption = statusSelect ? statusSelect.options[statusSelect.selectedIndex] : null;
+                        const requiresScheduling = selectedOption ? parseInt(selectedOption.getAttribute('data-requires-scheduling')) === 1 : false;
+                        
+                        // Only show scheduling toggle if the status requires scheduling
+                        this.showSchedulingToggle = requiresScheduling;
+                        
+                        // If status requires scheduling, automatically enable it
+                        if (requiresScheduling) {
+                            this.needsScheduling = true;
+                        } else {
+                            // Hide and reset scheduling fields if status doesn't require it
+                            this.showSchedulingToggle = false;
+                            this.needsScheduling = false;
+                            this.scheduledDate = '';
+                            this.scheduledTime = '';
+                        }
+                    } else {
+                        // Hide scheduling when no status is selected
+                        this.showSchedulingToggle = false;
+                        this.needsScheduling = false;
+                        this.scheduledDate = '';
+                        this.scheduledTime = '';
+                    }
                 },
 
                 toggleCategory(id) {
@@ -497,3 +668,7 @@
         </style>
     @endif
 </x-app-layout>
+
+
+
+

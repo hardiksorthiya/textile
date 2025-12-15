@@ -5,17 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Status extends Model
+class Setting extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'requires_scheduling',
+        'logo',
+        'favicon',
+        'primary_color',
+        'secondary_color',
     ];
-
-    public function leads()
-    {
-        return $this->hasMany(Lead::class);
-    }
 }

@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Reports') }}
@@ -14,7 +14,7 @@
                     
                     @can('export reports')
                         <div class="mt-4">
-                            <button class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                            <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
                                 Export Report
                             </button>
                         </div>
@@ -24,3 +24,6 @@
         </div>
     </div>
 </x-app-layout>
+
+
+
