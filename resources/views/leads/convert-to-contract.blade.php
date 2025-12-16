@@ -453,6 +453,193 @@
                             </div>
                         </div>
 
+                        <!-- Other Buyer Expenses Details Section -->
+                        <div class="row mt-4 mb-4">
+                            <div class="col-12">
+                                <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
+                                    <div class="card-body p-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold mb-0" style="color: #1f2937;">Other Buyer Expenses Details</h5>
+                                            <div class="d-flex align-items-center">
+                                                <label class="form-label fw-semibold mb-0 me-3" style="color: #374151;">In Print :</label>
+                                                <div class="btn-group" role="group">
+                                                    <input type="radio" class="btn-check" name="other_buyer_expenses_in_print" id="buyer_expenses_show" value="1" {{ ($settings->global_other_buyer_expenses_in_print ?? true) ? 'checked' : '' }}>
+                                                    <label class="btn btn-outline-success btn-sm" for="buyer_expenses_show" style="border-radius: 6px 0 0 6px;">Show</label>
+                                                    <input type="radio" class="btn-check" name="other_buyer_expenses_in_print" id="buyer_expenses_hide" value="0" {{ !($settings->global_other_buyer_expenses_in_print ?? true) ? 'checked' : '' }}>
+                                                    <label class="btn btn-outline-danger btn-sm" for="buyer_expenses_hide" style="border-radius: 0 6px 6px 0;">Hide</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Overseas Freight</label>
+                                                <input type="text" name="overseas_freight" value="{{ old('overseas_freight', $settings->global_overseas_freight ?? 'CHA will provide') }}" 
+                                                       class="form-control" placeholder="CHA will provide" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Demurrage / Detention / CFS Charges</label>
+                                                <input type="text" name="demurrage_detention_cfs_charges" value="{{ old('demurrage_detention_cfs_charges', $settings->global_demurrage_detention_cfs_charges ?? 'At Actual') }}" 
+                                                       class="form-control" placeholder="At Actual" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Air Pipe Connection</label>
+                                                <input type="text" name="air_pipe_connection" value="{{ old('air_pipe_connection', $settings->global_air_pipe_connection) }}" 
+                                                       class="form-control" placeholder="Enter air pipe connection" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Custom Duty</label>
+                                                <input type="text" name="custom_duty" value="{{ old('custom_duty', $settings->global_custom_duty) }}" 
+                                                       class="form-control" placeholder="Enter custom duty" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Port Expenses & Transport</label>
+                                                <input type="text" name="port_expenses_transport" value="{{ old('port_expenses_transport', $settings->global_port_expenses_transport ?? 'CHA will provide') }}" 
+                                                       class="form-control" placeholder="CHA will provide" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Crane & Foundation</label>
+                                                <input type="text" name="crane_foundation" value="{{ old('crane_foundation', $settings->global_crane_foundation ?? 'By Buyer') }}" 
+                                                       class="form-control" placeholder="By Buyer" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Humidification</label>
+                                                <input type="text" name="humidification" value="{{ old('humidification', $settings->global_humidification) }}" 
+                                                       class="form-control" placeholder="Enter humidification" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Damage</label>
+                                                <input type="text" name="damage" value="{{ old('damage', $settings->global_damage) }}" 
+                                                       class="form-control" placeholder="Enter damage" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">GST & Custom Charges</label>
+                                                <input type="text" name="gst_custom_charges" value="{{ old('gst_custom_charges', $settings->global_gst_custom_charges ?? 'At Actual By Buyer') }}" 
+                                                       class="form-control" placeholder="At Actual By Buyer" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Compressor</label>
+                                                <input type="text" name="compressor" value="{{ old('compressor', $settings->global_compressor) }}" 
+                                                       class="form-control" placeholder="Enter compressor" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Optional Spares</label>
+                                                <input type="text" name="optional_spares" value="{{ old('optional_spares', $settings->global_optional_spares) }}" 
+                                                       class="form-control" placeholder="Enter optional spares" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Other Details Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
+                                    <div class="card-body p-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold mb-0" style="color: #1f2937;">Other Details</h5>
+                                            <div class="d-flex align-items-center">
+                                                <label class="form-label fw-semibold mb-0 me-3" style="color: #374151;">In Print :</label>
+                                                <div class="btn-group" role="group">
+                                                    <input type="radio" class="btn-check" name="other_details_in_print" id="other_details_show" value="1" {{ ($settings->global_other_details_in_print ?? true) ? 'checked' : '' }}>
+                                                    <label class="btn btn-outline-success btn-sm" for="other_details_show" style="border-radius: 6px 0 0 6px;">Show</label>
+                                                    <input type="radio" class="btn-check" name="other_details_in_print" id="other_details_hide" value="0" {{ !($settings->global_other_details_in_print ?? true) ? 'checked' : '' }}>
+                                                    <label class="btn btn-outline-danger btn-sm" for="other_details_hide" style="border-radius: 0 6px 6px 0;">Hide</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Payment Terms</label>
+                                                <input type="text" name="payment_terms" value="{{ old('payment_terms', $settings->global_payment_terms ?? '10% Token + 15% Advance + 75% Before Shipment') }}" 
+                                                       class="form-control" placeholder="Enter payment terms" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Quote Validity</label>
+                                                <input type="text" name="quote_validity" value="{{ old('quote_validity', $settings->global_quote_validity ?? '10 Days') }}" 
+                                                       class="form-control" placeholder="Enter quote validity" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Loading Terms</label>
+                                                <input type="text" name="loading_terms" value="{{ old('loading_terms', $settings->global_loading_terms ?? '30 Days from 100% Payment') }}" 
+                                                       class="form-control" placeholder="Enter loading terms" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Warranty</label>
+                                                <input type="text" name="warranty" value="{{ old('warranty', $settings->global_warranty ?? '1 Year from Date of Loading') }}" 
+                                                       class="form-control" placeholder="Enter warranty" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Complimentary Spares</label>
+                                                <input type="text" name="complimentary_spares" value="{{ old('complimentary_spares', $settings->global_complimentary_spares ?? 'As per list attached') }}" 
+                                                       class="form-control" placeholder="Enter complimentary spares" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Difference of Specification Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
+                                    <div class="card-body p-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold mb-0" style="color: #1f2937;">Difference of Specification</h5>
+                                            <div class="d-flex align-items-center">
+                                                <label class="form-label fw-semibold mb-0 me-3" style="color: #374151;">In Print :</label>
+                                                <div class="btn-group" role="group">
+                                                    <input type="radio" class="btn-check" name="difference_specification_in_print" id="specification_show" value="1" {{ ($settings->global_difference_specification_in_print ?? true) ? 'checked' : '' }}>
+                                                    <label class="btn btn-outline-success btn-sm" for="specification_show" style="border-radius: 6px 0 0 6px;">Show</label>
+                                                    <input type="radio" class="btn-check" name="difference_specification_in_print" id="specification_hide" value="0" {{ !($settings->global_difference_specification_in_print ?? true) ? 'checked' : '' }}>
+                                                    <label class="btn btn-outline-danger btn-sm" for="specification_hide" style="border-radius: 0 6px 6px 0;">Hide</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Cam Jacquard of Chain Jacquard</label>
+                                                <input type="text" name="cam_jacquard_chain_jacquard" value="{{ old('cam_jacquard_chain_jacquard', $settings->global_cam_jacquard_chain_jacquard ?? '- $1000') }}" 
+                                                       class="form-control" placeholder="Enter value" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">5376 Hooks to 6144 Hooks Jacquard</label>
+                                                <input type="text" name="hooks_5376_to_6144_jacquard" value="{{ old('hooks_5376_to_6144_jacquard', $settings->global_hooks_5376_to_6144_jacquard ?? '+ $2000') }}" 
+                                                       class="form-control" placeholder="Enter value" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Warp Beam</label>
+                                                <input type="text" name="warp_beam" value="{{ old('warp_beam', $settings->global_warp_beam ?? '$600 pieces') }}" 
+                                                       class="form-control" placeholder="Enter value" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">380 cm to 420 cm reed space</label>
+                                                <input type="text" name="reed_space_380_to_420_cm" value="{{ old('reed_space_380_to_420_cm', $settings->global_reed_space_380_to_420_cm ?? '+ $4000') }}" 
+                                                       class="form-control" placeholder="Enter value" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">8 to 12 Color Selector</label>
+                                                <input type="text" name="color_selector_8_to_12" value="{{ old('color_selector_8_to_12', $settings->global_color_selector_8_to_12 ?? '+ $1000') }}" 
+                                                       class="form-control" placeholder="Enter value" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">5376 Hooks to 2688 Hooks Jacquard</label>
+                                                <input type="text" name="hooks_5376_to_2688_jacquard" value="{{ old('hooks_5376_to_2688_jacquard', $settings->global_hooks_5376_to_2688_jacquard ?? '- $6500') }}" 
+                                                       class="form-control" placeholder="Enter value" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold" style="color: #374151;">Extra Feeder</label>
+                                                <input type="text" name="extra_feeder" value="{{ old('extra_feeder', $settings->global_extra_feeder ?? '$250 pieces') }}" 
+                                                       class="form-control" placeholder="Enter value" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row mt-4">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">

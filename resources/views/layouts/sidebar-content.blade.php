@@ -1,4 +1,4 @@
-﻿<!-- Logo Section -->
+<!-- Logo Section -->
 <div class="p-6 border-b border-gray-200">
     <div class="flex items-center">
         @if(!empty($logoPath))
@@ -42,11 +42,11 @@
     @endhasrole
 
     @hasrole('Admin|Super Admin')
-    <div x-data="{ open: {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') ? 'sidebar-active' : '' }}">
+    <div x-data="{ open: {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'true' : 'false' }} }" class="space-y-2">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
-                <i class="fas fa-cog w-5 mr-3"></i>
-                <span>Machine</span>
+                <i class="fas fa-industry w-5 mr-3"></i>
+                <span class="fw-semibold">Machine</span>
             </div>
             <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
         </button>
@@ -131,6 +131,10 @@
                 <i class="fas fa-book-reader w-4 mr-2"></i>
                 <span>Machine E-Read</span>
             </a>
+            <a href="{{ route('delivery-terms.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('delivery-terms.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-shipping-fast w-4 mr-2"></i>
+                <span>Delivery Term</span>
+            </a>
             <a href="{{ route('sellers.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('sellers.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-user-tie w-4 mr-2"></i>
                 <span>Seller</span>
@@ -138,6 +142,10 @@
             <a href="{{ route('countries.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('countries.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-globe w-4 mr-2"></i>
                 <span>Seller country</span>
+            </a>
+            <a href="{{ route('settings.contract-details') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-cog w-4 mr-2"></i>
+                <span>Other Contract Details</span>
             </a>
         </div>
     </div>
@@ -181,10 +189,30 @@
     </div>
     @endhasrole
 
+    @hasrole('Admin|Super Admin')
+    <a href="{{ route('contracts.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.index') || request()->routeIs('contracts.edit') || request()->routeIs('contracts.signature') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-file-contract w-5 mr-3"></i>
+        <span>Contracts</span>
+    </a>
+    @endhasrole
+
     @can('view reports')
     <a href="{{ route('reports.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('reports.*') ? 'sidebar-active' : '' }}">
         <i class="fas fa-chart-bar w-5 mr-3"></i>
         <span>Reports</span>
+    </a>
+    @endcan
+
+    @can('view contract approvals')
+    <a href="{{ route('contracts.pending-approval') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.pending-approval') || request()->routeIs('contracts.approve') || request()->routeIs('contracts.reject') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-check-circle w-5 mr-3"></i>
+        <span>Contract Approvals</span>
+        @php
+            $pendingCount = \App\Models\Contract::where('approval_status', 'pending')->whereNotNull('customer_signature')->count();
+        @endphp
+        @if($pendingCount > 0)
+            <span class="badge bg-danger ms-2">{{ $pendingCount }}</span>
+        @endif
     </a>
     @endcan
 

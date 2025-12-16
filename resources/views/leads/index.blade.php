@@ -180,6 +180,7 @@
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Business/Brand</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Categories</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Status</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Contract</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Created</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Actions</th>
                         </tr>
@@ -228,6 +229,19 @@
                                     <span class="badge bg-info text-white">{{ $lead->status->name }}</span>
                                 </td>
                                 <td class="px-4 py-3">
+                                    @if($lead->contract)
+                                        <a href="{{ route('contracts.edit', $lead->contract) }}" class="text-decoration-none">
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-file-contract me-1"></i>{{ $lead->contract->contract_number }}
+                                            </span>
+                                        </a>
+                                    @else
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-times me-1"></i>No Contract
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">
                                     <small class="text-muted">{{ $lead->created_at->format('M d, Y') }}</small>
                                 </td>
                                 <td class="px-4 py-3">
@@ -238,9 +252,15 @@
                                         <a href="{{ route('leads.edit', $lead) }}" class="btn btn-sm btn-outline-primary" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="{{ route('leads.convert-to-contract', $lead) }}" class="btn btn-sm btn-outline-success" title="Convert to Contract">
-                                            <i class="fas fa-user-check"></i>
-                                        </a>
+                                        @if($lead->contract)
+                                            <a href="{{ route('contracts.edit', $lead->contract) }}" class="btn btn-sm btn-outline-success" title="View Contract">
+                                                <i class="fas fa-file-contract"></i>
+                                            </a>
+                                        @else
+                                            <a href="{{ route('leads.convert-to-contract', $lead) }}" class="btn btn-sm btn-outline-success" title="Convert to Contract">
+                                                <i class="fas fa-user-check"></i>
+                                            </a>
+                                        @endif
                                         <form action="{{ route('leads.destroy', $lead) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
                                             @csrf
                                             @method('DELETE')

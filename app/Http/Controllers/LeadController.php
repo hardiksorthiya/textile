@@ -14,13 +14,17 @@ use App\Models\BusinessFirm;
 use App\Models\Contract;
 use App\Models\ContractMachine;
 use App\Models\MachineModel;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 
 class LeadController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Lead::with(['business', 'state', 'city', 'area', 'status', 'brand', 'machineCategories']);
+        $query = Lead::with(['business', 'state', 'city', 'area', 'status', 'brand', 'machineCategories', 'contract'])
+            ->whereDoesntHave('contract', function($q) {
+                $q->whereNotNull('approval_status');
+            });
 
         // Search functionality
         if ($request->filled('search')) {
@@ -258,6 +262,13 @@ class LeadController extends Controller
 
     public function convertToContract(Lead $lead)
     {
+        // Check if this lead already has a contract
+        $existingContract = Contract::where('lead_id', $lead->id)->first();
+        if ($existingContract) {
+            return redirect()->route('contracts.index')
+                ->with('error', 'This lead already has a contract. You can view it in the contracts list.');
+        }
+
         $lead->load(['business', 'state', 'city', 'area', 'status', 'brand', 'machineCategories']);
         $businessFirms = BusinessFirm::orderBy('name')->get();
         $states = State::orderBy('name')->get();
@@ -266,15 +277,25 @@ class LeadController extends Controller
         $categories = MachineCategory::orderBy('name')->get();
         $brands = Brand::orderBy('name')->get();
         
+        // Get global contract details settings
+        $settings = Setting::firstOrCreate(['id' => 1]);
+        
         // Generate contract number
         $lastContract = Contract::orderBy('id', 'desc')->first();
         $contractNumber = 'CNT-' . str_pad(($lastContract ? $lastContract->id : 0) + 1, 6, '0', STR_PAD_LEFT);
         
-        return view('leads.convert-to-contract', compact('lead', 'businessFirms', 'states', 'cities', 'areas', 'categories', 'brands', 'contractNumber'));
+        return view('leads.convert-to-contract', compact('lead', 'businessFirms', 'states', 'cities', 'areas', 'categories', 'brands', 'contractNumber', 'settings'));
     }
 
     public function storeContract(Request $request, Lead $lead)
     {
+        // Check if this lead already has a contract
+        $existingContract = Contract::where('lead_id', $lead->id)->first();
+        if ($existingContract) {
+            return redirect()->route('contracts.index')
+                ->with('error', 'This lead already has a contract. You cannot create multiple contracts for the same lead.');
+        }
+
         $request->validate([
             'business_firm_id' => 'required|exists:business_firms,id',
             'contract_number' => 'required|string|max:255|unique:contracts,contract_number',
@@ -328,6 +349,35 @@ class LeadController extends Controller
             'phone_number_2' => $request->phone_number_2,
             'gst' => $request->gst,
             'pan' => $request->pan,
+            // Other Buyer Expenses Details
+            'overseas_freight' => $request->overseas_freight,
+            'demurrage_detention_cfs_charges' => $request->demurrage_detention_cfs_charges,
+            'air_pipe_connection' => $request->air_pipe_connection,
+            'custom_duty' => $request->custom_duty,
+            'port_expenses_transport' => $request->port_expenses_transport,
+            'crane_foundation' => $request->crane_foundation,
+            'humidification' => $request->humidification,
+            'damage' => $request->damage,
+            'gst_custom_charges' => $request->gst_custom_charges,
+            'compressor' => $request->compressor,
+            'optional_spares' => $request->optional_spares,
+            'other_buyer_expenses_in_print' => $request->has('other_buyer_expenses_in_print') ? (bool)$request->other_buyer_expenses_in_print : true,
+            // Other Details
+            'payment_terms' => $request->payment_terms,
+            'quote_validity' => $request->quote_validity,
+            'loading_terms' => $request->loading_terms,
+            'warranty' => $request->warranty,
+            'complimentary_spares' => $request->complimentary_spares,
+            'other_details_in_print' => $request->has('other_details_in_print') ? (bool)$request->other_details_in_print : true,
+            // Difference of Specification
+            'cam_jacquard_chain_jacquard' => $request->cam_jacquard_chain_jacquard,
+            'hooks_5376_to_6144_jacquard' => $request->hooks_5376_to_6144_jacquard,
+            'warp_beam' => $request->warp_beam,
+            'reed_space_380_to_420_cm' => $request->reed_space_380_to_420_cm,
+            'color_selector_8_to_12' => $request->color_selector_8_to_12,
+            'hooks_5376_to_2688_jacquard' => $request->hooks_5376_to_2688_jacquard,
+            'extra_feeder' => $request->extra_feeder,
+            'difference_specification_in_print' => $request->has('difference_specification_in_print') ? (bool)$request->difference_specification_in_print : true,
         ]);
 
         // Calculate total amount and prepare machine details for storage
@@ -401,8 +451,9 @@ class LeadController extends Controller
             'machine_details' => $machineDetails
         ]);
 
-        return redirect()->route('leads.index')
-            ->with('success', 'Lead converted to contract successfully.');
+        // Redirect to signature page
+        return redirect()->route('contracts.signature', $contract)
+            ->with('success', 'Contract created successfully. Please sign the contract.');
     }
 
     public function getMachineModels($brand_id)

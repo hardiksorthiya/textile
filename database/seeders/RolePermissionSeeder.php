@@ -39,20 +39,25 @@ class RolePermissionSeeder extends Seeder
             // Settings
             'view settings',
             'edit settings',
+            
+            // Contract Approval
+            'view contract approvals',
+            'approve contracts',
+            'reject contracts',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
         // Create Roles and assign permissions
         
         // Super Admin - All permissions
-        $superAdmin = Role::create(['name' => 'Super Admin']);
+        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin']);
         $superAdmin->givePermissionTo(Permission::all());
 
         // Admin - Most permissions except role management
-        $admin = Role::create(['name' => 'Admin']);
+        $admin = Role::firstOrCreate(['name' => 'Admin']);
         $admin->givePermissionTo([
             'view users',
             'create users',
@@ -62,26 +67,28 @@ class RolePermissionSeeder extends Seeder
             'export reports',
             'view settings',
             'edit settings',
+            'view contract approvals',
+            'approve contracts',
+            'reject contracts',
         ]);
 
         // Manager - View and edit permissions
-        $manager = Role::create(['name' => 'Manager']);
+        $manager = Role::firstOrCreate(['name' => 'Manager']);
         $manager->givePermissionTo([
             'view users',
             'view reports',
             'export reports',
+            'view contract approvals',
+            'approve contracts',
+            'reject contracts',
         ]);
 
         // Staff - Limited permissions
-        $staff = Role::create(['name' => 'Staff']);
-        $staff->givePermissionTo([
-            // No specific permissions for Staff
-        ]);
+        $staff = Role::firstOrCreate(['name' => 'Staff']);
+        // No specific permissions for Staff
 
         // User - Basic permissions
-        $user = Role::create(['name' => 'User']);
-        $user->givePermissionTo([
-            // No specific permissions for User
-        ]);
+        $user = Role::firstOrCreate(['name' => 'User']);
+        // No specific permissions for User
     }
 }

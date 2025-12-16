@@ -26,6 +26,7 @@ use App\Http\Controllers\MachineLeverController;
 use App\Http\Controllers\MachineChainController;
 use App\Http\Controllers\MachineHealdWireController;
 use App\Http\Controllers\MachineEReadController;
+use App\Http\Controllers\DeliveryTermController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\StateController;
 use App\Http\Controllers\CityController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\StatusController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\BusinessFirmController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\ContractController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -135,6 +137,9 @@ Route::middleware('auth')->group(function () {
         // Machine E-Read Routes
         Route::resource('machine-e-reads', MachineEReadController::class)->only(['index', 'store', 'update', 'destroy']);
         
+        // Delivery Term Routes
+        Route::resource('delivery-terms', DeliveryTermController::class)->only(['index', 'store', 'update', 'destroy']);
+        
         // Lead Management Routes
         Route::resource('businesses', BusinessController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('states', StateController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -147,6 +152,26 @@ Route::middleware('auth')->group(function () {
         Route::get('/leads/cities/{state_id}', [LeadController::class, 'getCities'])->name('leads.cities');
         Route::get('/leads/areas/{city_id}', [LeadController::class, 'getAreas'])->name('leads.areas');
         Route::get('/leads/machine-models/{brand_id}', [LeadController::class, 'getMachineModels'])->name('leads.machine-models');
+        
+        // Contract Routes
+        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->name('contracts.edit');
+        Route::put('/contracts/{contract}', [ContractController::class, 'update'])->name('contracts.update');
+        Route::delete('/contracts/{contract}', [ContractController::class, 'destroy'])->name('contracts.destroy');
+        Route::get('/contracts/{contract}/signature', [ContractController::class, 'signature'])->name('contracts.signature');
+        Route::post('/contracts/{contract}/signature', [ContractController::class, 'storeSignature'])->name('contracts.store-signature');
+        Route::get('/contracts/{contract}/download-pdf', [ContractController::class, 'downloadPdf'])->name('contracts.download-pdf');
+        
+        // Contract Approval Routes (with permissions)
+        Route::middleware(['permission:view contract approvals'])->group(function () {
+            Route::get('/contracts/pending-approval', [ContractController::class, 'pendingApproval'])->name('contracts.pending-approval');
+        });
+        Route::middleware(['permission:approve contracts'])->group(function () {
+            Route::post('/contracts/{contract}/approve', [ContractController::class, 'approve'])->name('contracts.approve');
+        });
+        Route::middleware(['permission:reject contracts'])->group(function () {
+            Route::post('/contracts/{contract}/reject', [ContractController::class, 'reject'])->name('contracts.reject');
+        });
         Route::get('/leads/category-items/{category_id}', [LeadController::class, 'getCategoryItems'])->name('leads.category-items');
         
         // Business Firm Routes
@@ -158,6 +183,12 @@ Route::middleware('auth')->group(function () {
             ->middleware('permission:view settings');
         Route::post('/admin/settings', [SettingController::class, 'update'])
             ->name('settings.update')
+            ->middleware('permission:edit settings');
+        Route::get('/admin/contract-details-settings', [SettingController::class, 'contractDetails'])
+            ->name('settings.contract-details')
+            ->middleware('permission:view settings');
+        Route::post('/admin/contract-details-settings', [SettingController::class, 'updateContractDetails'])
+            ->name('settings.update-contract-details')
             ->middleware('permission:edit settings');
     });
     
