@@ -1,67 +1,142 @@
-﻿<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-            {{ __('Profile Information') }}
-        </h2>
+<form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data">
+    @csrf
+    @method('patch')
 
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ __("Update your account's profile information and email address.") }}
-        </p>
-    </header>
+    <div class="mb-3">
+        <label class="form-label fw-semibold" style="color: #374151;">Name</label>
+        <input type="text" name="name" required
+               value="{{ old('name', $user->name) }}"
+               class="form-control @error('name') is-invalid @enderror"
+               placeholder="Enter your full name"
+               style="border-radius: 8px; border: 1px solid #e5e7eb;">
+        @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
 
-    <form id="send-verification" method="post" action="{{ route('verification.send') }}">
-        @csrf
-    </form>
+    <div class="mb-4">
+        <label class="form-label fw-semibold" style="color: #374151;">Phone Number</label>
+        <input type="text" name="phone" required
+               value="{{ old('phone', $user->phone) }}"
+               class="form-control @error('phone') is-invalid @enderror"
+               placeholder="Enter your phone number"
+               style="border-radius: 8px; border: 1px solid #e5e7eb;">
+        @error('phone')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
-        @csrf
-        @method('patch')
-
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
-        </div>
-
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
-            <x-input-error class="mt-2" :messages="$errors->get('email')" />
-
-            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-gray-800 dark:text-gray-200">
-                        {{ __('Your email address is unverified.') }}
-
-                        <button form="send-verification" class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
-                            {{ __('Click here to re-send the verification email.') }}
-                        </button>
-                    </p>
-
-                    @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600 dark:text-green-400">
-                            {{ __('A new verification link has been sent to your email address.') }}
-                        </p>
-                    @endif
+    <!-- Profile Image -->
+    <div class="mb-4">
+        <label class="form-label fw-semibold mb-3" style="color: #374151;">
+            <i class="fas fa-user-circle me-2"></i>Profile Image
+        </label>
+        
+        <div class="text-center mb-3">
+            @if($user->profile_image)
+                <img src="{{ asset('storage/' . $user->profile_image) }}" 
+                     alt="Profile Image" 
+                     id="profileImagePreview"
+                     class="rounded-circle border shadow-sm" 
+                     style="width: 120px; height: 120px; object-fit: cover; border: 3px solid color-mix(in srgb, var(--primary-color) 30%, transparent) !important;">
+            @else
+                <div id="profileImagePreview" class="rounded-circle border d-flex align-items-center justify-content-center mx-auto" 
+                     style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); border: 3px solid color-mix(in srgb, var(--primary-color) 30%, transparent) !important;">
+                    <i class="fas fa-user text-white" style="font-size: 3rem;"></i>
                 </div>
             @endif
         </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
+        <input type="file" 
+               name="profile_image" 
+               id="profile_image"
+               accept="image/*"
+               class="form-control @error('profile_image') is-invalid @enderror"
+               style="border-radius: 8px; border: 1px solid #e5e7eb;"
+               onchange="previewImage(this, 'profileImagePreview')">
+        @error('profile_image')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="text-muted">Max size: 2MB. Formats: JPEG, PNG, JPG, GIF</small>
+    </div>
 
-            @if (session('status') === 'profile-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600 dark:text-gray-400"
-                >{{ __('Saved.') }}</p>
+    <!-- Signature -->
+    <div class="mb-4">
+        <label class="form-label fw-semibold mb-3" style="color: #374151;">
+            <i class="fas fa-signature me-2"></i>Signature
+        </label>
+        
+        <div class="text-center mb-3" style="background: #f9fafb; border-radius: 8px; padding: 1rem; min-height: 100px; display: flex; align-items: center; justify-content: center;">
+            @if($user->signature)
+                <img src="{{ asset('storage/' . $user->signature) }}" 
+                     alt="Signature" 
+                     id="signaturePreview"
+                     class="img-fluid" 
+                     style="max-height: 100px; max-width: 100%; object-fit: contain;">
+            @else
+                <div id="signaturePreview" class="text-center">
+                    <i class="fas fa-signature text-muted" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                    <p class="text-muted mt-2 mb-0 small">No signature uploaded</p>
+                </div>
             @endif
         </div>
-    </form>
-</section>
 
+        <input type="file" 
+               name="signature" 
+               id="signature"
+               accept="image/*"
+               class="form-control @error('signature') is-invalid @enderror"
+               style="border-radius: 8px; border: 1px solid #e5e7eb;"
+               onchange="previewImage(this, 'signaturePreview')">
+        @error('signature')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+        <small class="text-muted">Max size: 2MB. Formats: JPEG, PNG, JPG, GIF</small>
+    </div>
 
+    <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i>Save Changes
+        </button>
+    </div>
+</form>
+
+<script>
+function previewImage(input, previewId) {
+    const preview = document.getElementById(previewId);
+    const file = input.files[0];
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (previewId === 'profileImagePreview') {
+                // For profile image, replace the div with img
+                if (preview.tagName === 'DIV') {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'rounded-circle border shadow-sm';
+                    img.style.cssText = 'width: 120px; height: 120px; object-fit: cover; border: 3px solid color-mix(in srgb, var(--primary-color) 30%, transparent) !important;';
+                    preview.parentNode.replaceChild(img, preview);
+                    img.id = previewId;
+                } else {
+                    preview.src = e.target.result;
+                }
+            } else {
+                // For signature
+                if (preview.tagName === 'DIV') {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'img-fluid';
+                    img.style.cssText = 'max-height: 100px; max-width: 100%; object-fit: contain;';
+                    preview.parentNode.replaceChild(img, preview);
+                    img.id = previewId;
+                } else {
+                    preview.src = e.target.result;
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+</script>
 

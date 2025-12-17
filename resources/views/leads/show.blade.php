@@ -8,9 +8,18 @@
             <a href="{{ route('leads.index') }}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to Leads
             </a>
+            @can('edit leads')
             <a href="{{ route('leads.edit', $lead) }}" class="btn btn-primary">
                 <i class="fas fa-edit me-2"></i>Edit Lead
             </a>
+            @endcan
+            @can('convert contract')
+            @if(!$lead->contract)
+            <a href="{{ route('leads.convert-to-contract', $lead) }}" class="btn btn-success">
+                <i class="fas fa-user-check me-2"></i>Convert to Contract
+            </a>
+            @endif
+            @endcan
         </div>
     </div>
 

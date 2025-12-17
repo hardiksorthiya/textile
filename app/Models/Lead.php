@@ -25,6 +25,7 @@ class Lead extends Model
         'needs_scheduling',
         'scheduled_date',
         'scheduled_time',
+        'created_by',
     ];
 
     public function business()
@@ -65,5 +66,10 @@ class Lead extends Model
     public function contract()
     {
         return $this->hasOne(Contract::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

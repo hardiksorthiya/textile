@@ -21,10 +21,23 @@ class LeadController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Lead::with(['business', 'state', 'city', 'area', 'status', 'brand', 'machineCategories', 'contract'])
+        $query = Lead::with(['business', 'state', 'city', 'area', 'status', 'brand', 'machineCategories', 'contract', 'creator'])
             ->whereDoesntHave('contract', function($q) {
                 $q->whereNotNull('approval_status');
             });
+
+        // Filter leads based on user role and team
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            // Get IDs of users created by current user (team members)
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            
+            // Show leads created by current user OR their team members
+            $query->where(function($q) use ($teamMemberIds) {
+                $q->where('created_by', auth()->id())
+                  ->orWhereIn('created_by', $teamMemberIds);
+            });
+        }
+        // Admin/Super Admin see all leads (no additional filter)
 
         // Search functionality
         if ($request->filled('search')) {
@@ -92,6 +105,17 @@ class LeadController extends Controller
 
     public function show(Lead $lead)
     {
+        // Check if user can view this lead
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            // Get IDs of users created by current user (team members)
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            
+            // Check if lead was created by current user or their team member
+            if ($lead->created_by !== auth()->id() && !in_array($lead->created_by, $teamMemberIds)) {
+                abort(403, 'You can only view leads you created or leads created by your team members.');
+            }
+        }
+        
         $lead->load(['business', 'state', 'city', 'area', 'status', 'brand', 'machineCategories']);
         return view('leads.show', compact('lead'));
     }
@@ -156,6 +180,9 @@ class LeadController extends Controller
             $leadData['running_since'] = $request->running_since;
         }
 
+        // Add the current user as creator
+        $leadData['created_by'] = auth()->id();
+
         $lead = Lead::create($leadData);
 
         // Attach categories
@@ -167,6 +194,17 @@ class LeadController extends Controller
 
     public function edit(Lead $lead)
     {
+        // Check if user can edit this lead
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            // Get IDs of users created by current user (team members)
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            
+            // Check if lead was created by current user or their team member
+            if ($lead->created_by !== auth()->id() && !in_array($lead->created_by, $teamMemberIds)) {
+                abort(403, 'You can only edit leads you created or leads created by your team members.');
+            }
+        }
+        
         $businesses = Business::orderBy('name')->get();
         $states = State::orderBy('name')->get();
         $cities = City::where('state_id', $lead->state_id)->orderBy('name')->get();
@@ -179,6 +217,17 @@ class LeadController extends Controller
 
     public function update(Request $request, Lead $lead)
     {
+        // Check if user can update this lead
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            // Get IDs of users created by current user (team members)
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            
+            // Check if lead was created by current user or their team member
+            if ($lead->created_by !== auth()->id() && !in_array($lead->created_by, $teamMemberIds)) {
+                abort(403, 'You can only update leads you created or leads created by your team members.');
+            }
+        }
+        
         $rules = [
             'type' => 'required|in:new,old',
             'name' => 'required|string|max:255',
@@ -242,6 +291,18 @@ class LeadController extends Controller
 
     public function destroy(Lead $lead)
     {
+        // Check if user can delete this lead
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            // Get IDs of users created by current user (team members)
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            
+            // Check if lead was created by current user or their team member
+            if ($lead->created_by !== auth()->id() && !in_array($lead->created_by, $teamMemberIds)) {
+                return redirect()->route('leads.index')
+                    ->with('error', 'You can only delete leads you created or leads created by your team members.');
+            }
+        }
+        
         $lead->delete();
 
         return redirect()->route('leads.index')
@@ -262,6 +323,18 @@ class LeadController extends Controller
 
     public function convertToContract(Lead $lead)
     {
+        // Check if user can convert this lead
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            // Get IDs of users created by current user (team members)
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            
+            // Check if lead was created by current user or their team member
+            if ($lead->created_by !== auth()->id() && !in_array($lead->created_by, $teamMemberIds)) {
+                return redirect()->route('leads.index')
+                    ->with('error', 'You can only convert leads you created or leads created by your team members.');
+            }
+        }
+        
         // Check if this lead already has a contract
         $existingContract = Contract::where('lead_id', $lead->id)->first();
         if ($existingContract) {
@@ -310,6 +383,7 @@ class LeadController extends Controller
             'phone_number_2' => 'nullable|string|max:20',
             'gst' => 'nullable|string|max:50',
             'pan' => 'nullable|string|max:50',
+            'token_amount' => 'nullable|numeric|min:0',
             'machines' => 'required|array|min:1',
             'machines.*.machine_category_id' => 'required|exists:machine_categories,id',
             'machines.*.brand_id' => 'nullable|exists:brands,id',
@@ -336,6 +410,7 @@ class LeadController extends Controller
 
         $contract = Contract::create([
             'lead_id' => $lead->id,
+            'created_by' => auth()->id(),
             'business_firm_id' => $request->business_firm_id,
             'contract_number' => $request->contract_number,
             'buyer_name' => $request->buyer_name,
@@ -445,9 +520,10 @@ class LeadController extends Controller
             ]);
         }
 
-        // Update contract with total amount and machine details
+        // Update contract with total amount, token amount and machine details
         $contract->update([
             'total_amount' => $totalAmount,
+            'token_amount' => $request->token_amount ?? null,
             'machine_details' => $machineDetails
         ]);
 

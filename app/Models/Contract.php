@@ -9,6 +9,7 @@ class Contract extends Model
 {
     protected $fillable = [
         'lead_id',
+        'created_by',
         'business_firm_id',
         'contract_number',
         'buyer_name',
@@ -23,6 +24,7 @@ class Contract extends Model
         'gst',
         'pan',
         'total_amount',
+        'token_amount',
         'machine_details',
         // Other Buyer Expenses Details
         'overseas_freight',
@@ -101,5 +103,10 @@ class Contract extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

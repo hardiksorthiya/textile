@@ -19,7 +19,7 @@
         <span>Dashboard</span>
     </a>
 
-    @hasrole('Admin|Super Admin')
+    @canany(['view users', 'create users', 'edit users', 'delete users', 'view roles', 'create roles', 'edit roles', 'delete roles'])
     <div x-data="{ open: {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'true' : 'false' }} }" class="space-y-2">
         <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
@@ -29,17 +29,21 @@
             <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
         </button>
         <div x-show="open" x-collapse class="ml-8 space-y-1">
+            @can('view users')
             <a href="{{ route('users.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('users.*') && !request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-list w-4 mr-2"></i>
                 <span>Team List</span>
             </a>
+            @endcan
+            @canany(['view roles', 'create roles', 'edit roles', 'delete roles'])
             <a href="{{ route('roles.create') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-user-tag w-4 mr-2"></i>
                 <span>Role Create</span>
             </a>
+            @endcanany
         </div>
     </div>
-    @endhasrole
+    @endcanany
 
     @hasrole('Admin|Super Admin')
     <div x-data="{ open: {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'true' : 'false' }} }" class="space-y-2">
@@ -151,7 +155,7 @@
     </div>
     @endhasrole
 
-    @hasrole('Admin|Super Admin')
+    @canany(['view leads', 'create leads', 'edit leads', 'delete leads', 'convert contract'])
     <div x-data="{ open: {{ request()->routeIs('leads.*') || request()->routeIs('businesses.*') || request()->routeIs('states.*') || request()->routeIs('cities.*') || request()->routeIs('areas.*') || request()->routeIs('statuses.*') ? 'true' : 'false' }} }" class="space-y-2">
         <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('leads.*') || request()->routeIs('businesses.*') || request()->routeIs('states.*') || request()->routeIs('cities.*') || request()->routeIs('areas.*') || request()->routeIs('statuses.*') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
@@ -161,10 +165,13 @@
             <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
         </button>
         <div x-show="open" x-collapse class="ml-8 space-y-1">
+            @can('view leads')
             <a href="{{ route('leads.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('leads.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-list w-4 mr-2"></i>
                 <span>List Leads</span>
             </a>
+            @endcan
+            @hasrole('Admin|Super Admin')
             <a href="{{ route('businesses.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('businesses.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-building w-4 mr-2"></i>
                 <span>Business</span>
@@ -185,16 +192,31 @@
                 <i class="fas fa-info-circle w-4 mr-2"></i>
                 <span>Status</span>
             </a>
+            @endhasrole
         </div>
     </div>
-    @endhasrole
+    @endcanany
 
-    @hasrole('Admin|Super Admin')
+    @canany(['view contract approvals', 'approve contracts', 'reject contracts'])
     <a href="{{ route('contracts.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.index') || request()->routeIs('contracts.edit') || request()->routeIs('contracts.signature') ? 'sidebar-active' : '' }}">
         <i class="fas fa-file-contract w-5 mr-3"></i>
         <span>Contracts</span>
     </a>
-    @endhasrole
+    @endcanany
+
+    @canany(['view proforma invoices', 'create proforma invoices', 'edit proforma invoices', 'delete proforma invoices'])
+    <a href="{{ route('proforma-invoices.create') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.*') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-file-invoice w-5 mr-3"></i>
+        <span>Proforma Invoice</span>
+    </a>
+    @endcanany
+
+    @can('view customers')
+    <a href="{{ route('customers.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('customers.*') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-user-check w-5 mr-3"></i>
+        <span>Customers</span>
+    </a>
+    @endcan
 
     @can('view reports')
     <a href="{{ route('reports.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('reports.*') ? 'sidebar-active' : '' }}">
@@ -216,7 +238,7 @@
     </a>
     @endcan
 
-    @hasrole('Admin|Super Admin')
+    @canany(['view settings', 'edit settings'])
     <div x-data="{ open: {{ request()->routeIs('settings.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') ? 'true' : 'false' }} }" class="space-y-2">
         <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
@@ -236,7 +258,7 @@
             </a>
         </div>
     </div>
-    @endhasrole
+    @endcanany
 </nav>
 
 <!-- Mobile App Section -->

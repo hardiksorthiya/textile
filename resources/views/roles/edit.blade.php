@@ -47,10 +47,21 @@
                                 $permissionGroups = [
                                     'User Management' => ['view users', 'create users', 'edit users', 'delete users'],
                                     'Role & Permission Management' => ['view roles', 'create roles', 'edit roles', 'delete roles', 'assign roles'],
+                                    'Lead Management' => ['view leads', 'create leads', 'edit leads', 'delete leads', 'convert contract'],
+                                    'Customer Management' => ['view customers', 'delete customers'],
+                                    'Contract Approval' => ['view contract approvals', 'approve contracts', 'reject contracts'],
+                                    'Proforma Invoice Management' => ['view proforma invoices', 'create proforma invoices', 'edit proforma invoices', 'delete proforma invoices'],
                                     'Reports' => ['view reports', 'export reports'],
                                     'Settings' => ['view settings', 'edit settings'],
                                 ];
+                                // Get permission IDs - ensure we're getting fresh data
+                                // Refresh the role to get latest permissions
+                                $role->refresh();
+                                $role->load('permissions');
                                 $rolePermissionIds = $role->permissions->pluck('id')->toArray();
+                                
+                                // Get assignable roles
+                                $assignableRoleIds = $role->assignable_roles ? json_decode($role->assignable_roles, true) : [];
                             @endphp
 
                             <div class="overflow-y-auto overflow-x-hidden" style="max-height: calc(100vh - 450px);">
@@ -81,7 +92,7 @@
                                                                                    name="permissions[]" 
                                                                                    value="{{ $permission->id }}"
                                                                                    id="permission-{{ $permission->id }}"
-                                                                                   {{ (old('permissions') && in_array($permission->id, old('permissions'))) || in_array($permission->id, $rolePermissionIds) ? 'checked' : '' }}
+                                                                                   {{ (old('permissions') && in_array($permission->id, old('permissions'))) || (isset($rolePermissionIds) && in_array($permission->id, $rolePermissionIds)) ? 'checked' : '' }}
                                                                                    onchange="updateBoxStyle(this)"
                                                                                    style="width: 18px; height: 18px; border-color: var(--primary-color); cursor: pointer; margin-top: 0;">
                                                                             <span class="flex-grow-1" style="font-size: 0.875rem; color: #4b5563; font-weight: 500;">
@@ -104,6 +115,52 @@
                                 <div class="text-danger small mt-2">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <!-- Assignable Roles (Roles this role can assign when creating users) -->
+                        @if(in_array('create users', $permissions->pluck('name')->toArray()))
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold mb-3" style="color: #374151;">
+                                <i class="fas fa-user-tag me-2"></i>Assignable Roles
+                                <small class="text-muted">(Select which roles users with this role can assign when creating team members)</small>
+                            </label>
+                            
+                            <div class="border rounded p-3" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important; background: white;">
+                                <div class="row g-2">
+                                    @foreach($roles as $assignableRole)
+                                        @if($assignableRole->name !== 'Super Admin' && $assignableRole->id != $role->id)
+                                        <div class="col-md-6 col-lg-4 p-1">
+                                            <label for="assignable-role-{{ $assignableRole->id }}" class="d-block m-0" style="cursor: pointer;">
+                                                <div class="permission-box p-3 rounded border position-relative" 
+                                                     style="background: color-mix(in srgb, #10b981 5%, white); border: 2px solid color-mix(in srgb, #10b981 20%, transparent) !important; transition: all 0.3s ease; min-height: 60px;"
+                                                     onmouseover="this.style.background='color-mix(in srgb, #10b981 10%, white)'; this.style.borderColor='color-mix(in srgb, #10b981 40%, transparent)'"
+                                                     onmouseout="this.style.background='color-mix(in srgb, #10b981 5%, white)'; this.style.borderColor='color-mix(in srgb, #10b981 20%, transparent)'">
+                                                    <div class="d-flex align-items-center">
+                                                        <input class="form-check-input me-3" 
+                                                               type="checkbox" 
+                                                               name="assignable_roles[]" 
+                                                               value="{{ $assignableRole->id }}"
+                                                               id="assignable-role-{{ $assignableRole->id }}"
+                                                               {{ (old('assignable_roles') && in_array($assignableRole->id, old('assignable_roles'))) || (isset($assignableRoleIds) && in_array($assignableRole->id, $assignableRoleIds)) ? 'checked' : '' }}
+                                                               onchange="updateBoxStyle(this)"
+                                                               style="width: 18px; height: 18px; border-color: #10b981; cursor: pointer; margin-top: 0;">
+                                                        <span class="flex-grow-1" style="font-size: 0.875rem; color: #4b5563; font-weight: 500;">
+                                                            {{ $assignableRole->name }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                            
+                            @error('assignable_roles')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Note: If no roles are selected, users with this role can assign any role (except Super Admin).</small>
+                        </div>
+                        @endif
 
                         <!-- Submit Button -->
                         <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
@@ -255,6 +312,9 @@
         // Initialize box styles on page load
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('input[type="checkbox"][name="permissions[]"]').forEach(checkbox => {
+                updateBoxStyle(checkbox);
+            });
+            document.querySelectorAll('input[type="checkbox"][name="assignable_roles[]"]').forEach(checkbox => {
                 updateBoxStyle(checkbox);
             });
         });

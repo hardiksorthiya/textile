@@ -640,6 +640,21 @@
                             </div>
                         </div>
 
+                        <!-- Token Amount Section -->
+                        <div class="row mt-4 pt-4 border-top" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="color: #374151;">Token Amount (₹)</label>
+                                <input type="number" name="token_amount" value="{{ old('token_amount') }}" 
+                                       step="0.01" min="0"
+                                       class="form-control @error('token_amount') is-invalid @enderror" 
+                                       placeholder="Enter token amount in ₹" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                @error('token_amount')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">Optional: Enter the token amount in Indian Rupees (₹)</small>
+                            </div>
+                        </div>
+
                         <div class="row mt-4">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">

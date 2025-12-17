@@ -21,13 +21,118 @@ class ContractController extends Controller
     /**
      * Display a listing of contracts with other contract details.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $contracts = Contract::with(['lead', 'businessFirm', 'state', 'city', 'area'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query = Contract::with(['lead', 'creator', 'businessFirm', 'state', 'city', 'area']);
         
-        return view('contracts.index', compact('contracts'));
+        // If user is not Admin or Super Admin, show only contracts they created or contracts from their team members
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            $query->where(function($q) use ($teamMemberIds) {
+                $q->where('created_by', auth()->id())
+                  ->orWhereIn('created_by', $teamMemberIds);
+            });
+        }
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('contract_number', 'like', "%{$search}%")
+                  ->orWhere('buyer_name', 'like', "%{$search}%")
+                  ->orWhere('company_name', 'like', "%{$search}%")
+                  ->orWhere('phone_number', 'like', "%{$search}%")
+                  ->orWhere('phone_number_2', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhereHas('state', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('city', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('area', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('businessFirm', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter by approval status
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
+        }
+
+        // Filter by state
+        if ($request->filled('state_id')) {
+            $query->where('state_id', $request->state_id);
+        }
+
+        // Filter by city
+        if ($request->filled('city_id')) {
+            $query->where('city_id', $request->city_id);
+        }
+
+        // Filter by business firm
+        if ($request->filled('business_firm_id')) {
+            $query->where('business_firm_id', $request->business_firm_id);
+        }
+        
+        $contracts = $query->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        $states = \App\Models\State::orderBy('name')->get();
+        $businessFirms = \App\Models\BusinessFirm::orderBy('name')->get();
+        $cities = $request->filled('state_id') 
+            ? \App\Models\City::where('state_id', $request->state_id)->orderBy('name')->get()
+            : collect([]);
+        
+        return view('contracts.index', compact('contracts', 'states', 'cities', 'businessFirms'));
+    }
+
+    /**
+     * Display the specified contract with all details.
+     */
+    public function show(Contract $contract)
+    {
+        // Check if user can view this contract
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            if ($contract->created_by !== auth()->id() && !in_array($contract->created_by, $teamMemberIds)) {
+                abort(403, 'You can only view contracts you created or contracts created by your team members.');
+            }
+        }
+        
+        $contract->load(['creator', 'approver', 'businessFirm', 'state', 'city', 'area', 'contractMachines']);
+        
+        // Load related data for machine details
+        foreach ($contract->contractMachines as $machine) {
+            $machine->load([
+                'machineCategory',
+                'brand',
+                'machineModel',
+                'feeder.feederBrand',
+                'machineHook',
+                'machineERead',
+                'color',
+                'machineNozzle',
+                'machineDropin',
+                'machineBeam',
+                'machineClothRoller',
+                'machineSoftware',
+                'hsnCode',
+                'wir',
+                'machineShaft',
+                'machineLever',
+                'machineChain',
+                'machineHealdWire',
+                'deliveryTerm'
+            ]);
+        }
+        
+        return view('contracts.show', compact('contract'));
     }
 
     /**
@@ -35,7 +140,15 @@ class ContractController extends Controller
      */
     public function edit(Contract $contract)
     {
-        $contract->load(['lead', 'businessFirm', 'state', 'city', 'area', 'contractMachines']);
+        // Check if user can edit this contract
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            if ($contract->created_by !== auth()->id() && !in_array($contract->created_by, $teamMemberIds)) {
+                abort(403, 'You can only edit contracts you created or contracts created by your team members.');
+            }
+        }
+        
+        $contract->load(['lead', 'creator', 'businessFirm', 'state', 'city', 'area', 'contractMachines', 'approver']);
         $categories = MachineCategory::orderBy('name')->get();
         $brands = Brand::orderBy('name')->get();
         $businessFirms = BusinessFirm::orderBy('name')->get();
@@ -82,6 +195,13 @@ class ContractController extends Controller
      */
     public function update(Request $request, Contract $contract)
     {
+        // Check if user can update this contract
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            if ($contract->created_by !== auth()->id() && !in_array($contract->created_by, $teamMemberIds)) {
+                abort(403, 'You can only update contracts you created or contracts created by your team members.');
+            }
+        }
         $request->validate([
             // Personal Information
             'business_firm_id' => 'required|exists:business_firms,id',
@@ -96,6 +216,7 @@ class ContractController extends Controller
             'phone_number_2' => 'nullable|string|max:20',
             'gst' => 'nullable|string|max:50',
             'pan' => 'nullable|string|max:50',
+            'token_amount' => 'nullable|numeric|min:0',
             // Machine Details
             'machines' => 'nullable|array|min:1',
             'machines.*.machine_category_id' => 'required_with:machines|exists:machine_categories,id',
@@ -244,6 +365,7 @@ class ContractController extends Controller
             'phone_number_2' => $request->phone_number_2,
             'gst' => $request->gst,
             'pan' => $request->pan,
+            'token_amount' => $request->token_amount ?? null,
             // Other Buyer Expenses Details
             'overseas_freight' => $request->overseas_freight,
             'demurrage_detention_cfs_charges' => $request->demurrage_detention_cfs_charges,
@@ -289,6 +411,14 @@ class ContractController extends Controller
      */
     public function signature(Contract $contract)
     {
+        // Check if user can access this contract
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            if ($contract->created_by !== auth()->id() && !in_array($contract->created_by, $teamMemberIds)) {
+                abort(403, 'You can only access contracts you created or contracts created by your team members.');
+            }
+        }
+        
         $contract->load(['lead', 'businessFirm', 'state', 'city', 'area']);
         return view('contracts.signature', compact('contract'));
     }
@@ -298,6 +428,14 @@ class ContractController extends Controller
      */
     public function storeSignature(Request $request, Contract $contract)
     {
+        // Check if user can access this contract
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            if ($contract->created_by !== auth()->id() && !in_array($contract->created_by, $teamMemberIds)) {
+                abort(403, 'You can only sign contracts you created or contracts created by your team members.');
+            }
+        }
+        
         $request->validate([
             'signature' => 'required|string',
         ]);
@@ -387,7 +525,16 @@ class ContractController extends Controller
      */
     public function downloadPdf(Contract $contract)
     {
-        $contract->load(['lead', 'businessFirm', 'state', 'city', 'area', 'contractMachines']);
+        // Check if user can access this contract
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $teamMemberIds = \App\Models\User::where('created_by', auth()->id())->pluck('id')->toArray();
+            $contract->load('lead');
+            if (!$contract->lead || ($contract->lead->created_by !== auth()->id() && !in_array($contract->lead->created_by, $teamMemberIds))) {
+                abort(403, 'You can only download contracts from leads you created or leads created by your team members.');
+            }
+        }
+        
+        $contract->load(['creator', 'approver', 'businessFirm', 'state', 'city', 'area', 'contractMachines']);
         
         // Load related data for machine details
         foreach ($contract->contractMachines as $machine) {
@@ -415,6 +562,11 @@ class ContractController extends Controller
         }
         
         $pdf = DomPDF::loadView('contracts.pdf', compact('contract'));
+        
+        // Set options to enable font subsetting and Unicode support
+        $pdf->setOption('enable-font-subsetting', true);
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', true);
         
         return $pdf->download('contract-' . $contract->contract_number . '.pdf');
     }

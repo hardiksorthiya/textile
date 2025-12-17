@@ -34,13 +34,13 @@
                             @enderror
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold" style="color: #374151;">Email</label>
-                            <input type="email" name="email" required
-                                   value="{{ old('email', $user->email) }}"
-                                   class="form-control @error('email') is-invalid @enderror"
-                                   placeholder="Enter email address"
+                            <label class="form-label fw-semibold" style="color: #374151;">Phone Number</label>
+                            <input type="text" name="phone" required
+                                   value="{{ old('phone', $user->phone) }}"
+                                   class="form-control @error('phone') is-invalid @enderror"
+                                   placeholder="Enter phone number"
                                    style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                            @error('email')
+                            @error('phone')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

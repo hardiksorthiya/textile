@@ -37,6 +37,7 @@
                     
                     <!-- Add Form -->
                     <div x-show="!isEditing">
+                        @can('create users')
                         <form action="{{ route('users.store') }}" method="POST">
                             @csrf
                             <div class="mb-3">
@@ -51,13 +52,13 @@
                                 @enderror
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold" style="color: #374151;">Email</label>
-                                <input type="email" name="email" required
-                                       value="{{ old('email') }}"
-                                       class="form-control @error('email') is-invalid @enderror"
-                                       placeholder="Enter email address"
+                                <label class="form-label fw-semibold" style="color: #374151;">Phone Number</label>
+                                <input type="text" name="phone" required
+                                       value="{{ old('phone') }}"
+                                       class="form-control @error('phone') is-invalid @enderror"
+                                       placeholder="Enter phone number"
                                        style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                @error('email')
+                                @error('phone')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -98,10 +99,16 @@
                                 <i class="fas fa-plus me-2"></i>Add Team Member
                             </button>
                         </form>
+                        @else
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>You don't have permission to create users.
+                        </div>
+                        @endcan
                     </div>
 
                     <!-- Edit Form -->
                     <div x-show="isEditing" x-cloak>
+                        @can('edit users')
                         <template x-if="editingUser">
                             <form :action="`{{ url('users') }}/${editingUser.id}`" method="POST">
                                 @csrf
@@ -115,11 +122,11 @@
                                            style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold" style="color: #374151;">Email</label>
-                                    <input type="email" name="email" required
-                                           x-model="editingUser.email"
+                                    <label class="form-label fw-semibold" style="color: #374151;">Phone Number</label>
+                                    <input type="text" name="phone" required
+                                           x-model="editingUser.phone"
                                            class="form-control"
-                                           placeholder="Enter email address"
+                                           placeholder="Enter phone number"
                                            style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                 </div>
                                 <div class="mb-3">
@@ -160,6 +167,11 @@
                                 </div>
                             </form>
                         </template>
+                        @else
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>You don't have permission to edit users.
+                        </div>
+                        @endcan
                     </div>
                 </div>
             </div>
@@ -182,8 +194,11 @@
                             <thead class="sticky-top table-light">
                                 <tr>
                                     <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #6b7280;">User</th>
-                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #6b7280;">Email</th>
+                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #6b7280;">Phone</th>
                                     <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #6b7280;">Role</th>
+                                    @hasrole('Admin|Super Admin')
+                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #6b7280;">Created By</th>
+                                    @endhasrole
                                     <th class="px-4 py-3 text-uppercase small fw-bold" style="color: #6b7280;">Actions</th>
                                 </tr>
                             </thead>
@@ -203,7 +218,7 @@
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
-                                            <div style="color: #4b5563;">{{ $user->email }}</div>
+                                            <div style="color: #4b5563;">{{ $user->phone ?? '-' }}</div>
                                         </td>
                                         <td class="px-4 py-3">
                                             @if($user->roles->count() > 0)
@@ -224,19 +239,36 @@
                                                 <span class="badge bg-secondary" style="padding: 0.4em 0.8em; font-size: 0.75rem; border-radius: 6px;">No Role</span>
                                             @endif
                                         </td>
+                                        @hasrole('Admin|Super Admin')
+                                        <td class="px-4 py-3">
+                                            @php
+                                                $creator = $user->creator;
+                                            @endphp
+                                            @if($user->created_by && $creator)
+                                                <span class="fw-semibold" style="color: #1f2937;">{{ $creator->name }}</span>
+                                            @elseif($user->created_by)
+                                                <small class="text-muted">User #{{ $user->created_by }}</small>
+                                            @else
+                                                <small class="text-muted">-</small>
+                                            @endif
+                                        </td>
+                                        @endhasrole
                                         <td class="px-4 py-3">
                                             <div class="d-flex gap-2" role="group">
+                                                @can('edit users')
                                                 <button type="button" 
                                                         @click="editUser({
                                                             id: {{ $user->id }},
                                                             name: '{{ addslashes($user->name) }}',
-                                                            email: '{{ addslashes($user->email) }}',
+                                                            phone: '{{ addslashes($user->phone ?? '') }}',
                                                             current_role: '{{ $user->roles->first()?->name ?? '' }}'
                                                         })"
                                                         class="btn btn-sm btn-outline-primary" 
                                                         title="Edit User">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
+                                                @endcan
+                                                @can('delete users')
                                                 <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this user?');">
                                                     @csrf
                                                     @method('DELETE')
@@ -244,12 +276,13 @@
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-5">
+                                        <td colspan="{{ auth()->user()->hasAnyRole(['Admin', 'Super Admin']) ? '5' : '4' }}" class="text-center text-muted py-5">
                                             <i class="fas fa-users fa-2x mb-3 d-block" style="color: #d1d5db;"></i>
                                             No users found.
                                         </td>

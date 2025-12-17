@@ -6,9 +6,11 @@
                     <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Leads Management</h1>
                     <p class="text-muted mb-0">View and manage all generated leads</p>
                 </div>
+                @can('create leads')
                 <a href="{{ route('leads.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Create New Lead
                 </a>
+                @endcan
             </div>
 
            
@@ -177,10 +179,10 @@
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Name</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Phone</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Location</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Business/Brand</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Categories</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Status</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Contract</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Lead By</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Created</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Actions</th>
                         </tr>
@@ -199,15 +201,6 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <small>{{ $lead->area->name }}, {{ $lead->city->name }}, {{ $lead->state->name }}</small>
-                                </td>
-                                <td class="px-4 py-3">
-                                    @if($lead->type === 'new' && $lead->business)
-                                        <span class="badge" style="background-color: color-mix(in srgb, #ef4444 15%, #ffffff); color: #dc2626; font-size: 0.875rem; padding: 0.35rem 0.65rem;">{{ $lead->business->name }}</span>
-                                    @elseif($lead->type === 'old' && $lead->brand)
-                                        <span class="badge" style="background-color: color-mix(in srgb, #3b82f6 15%, #ffffff); color: #2563eb; font-size: 0.875rem; padding: 0.35rem 0.65rem;">{{ $lead->brand->name }}</span>
-                                    @else
-                                        <small class="text-muted">-</small>
-                                    @endif
                                 </td>
                                 <td class="px-4 py-3">
                                     @if($lead->machineCategories->count() > 0)
@@ -242,6 +235,32 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3">
+                                    @php
+                                        $creator = $lead->creator;
+                                    @endphp
+                                    @if($lead->created_by && $creator)
+                                        @if($lead->created_by == auth()->id())
+                                            <span class="badge" style="background-color: color-mix(in srgb, #10b981 15%, #ffffff); color: #059669; font-size: 0.875rem; padding: 0.35rem 0.65rem;">
+                                                You
+                                            </span>
+                                        @else
+                                            <span class="fw-semibold" style="color: #1f2937;">
+                                                {{ $creator->name }}
+                                            </span>
+                                        @endif
+                                    @elseif($lead->created_by)
+                                        @if($lead->created_by == auth()->id())
+                                            <span class="badge" style="background-color: color-mix(in srgb, #10b981 15%, #ffffff); color: #059669; font-size: 0.875rem; padding: 0.35rem 0.65rem;">
+                                                You
+                                            </span>
+                                        @else
+                                            <small class="text-muted">User #{{ $lead->created_by }}</small>
+                                        @endif
+                                    @else
+                                        <small class="text-muted">-</small>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">
                                     <small class="text-muted">{{ $lead->created_at->format('M d, Y') }}</small>
                                 </td>
                                 <td class="px-4 py-3">
@@ -249,18 +268,23 @@
                                         <a href="{{ route('leads.show', $lead) }}" class="btn btn-sm btn-outline-info" title="View">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        @can('edit leads')
                                         <a href="{{ route('leads.edit', $lead) }}" class="btn btn-sm btn-outline-primary" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        @endcan
                                         @if($lead->contract)
                                             <a href="{{ route('contracts.edit', $lead->contract) }}" class="btn btn-sm btn-outline-success" title="View Contract">
                                                 <i class="fas fa-file-contract"></i>
                                             </a>
                                         @else
+                                            @can('convert contract')
                                             <a href="{{ route('leads.convert-to-contract', $lead) }}" class="btn btn-sm btn-outline-success" title="Convert to Contract">
                                                 <i class="fas fa-user-check"></i>
                                             </a>
+                                            @endcan
                                         @endif
+                                        @can('delete leads')
                                         <form action="{{ route('leads.destroy', $lead) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
                                             @csrf
                                             @method('DELETE')
@@ -268,12 +292,13 @@
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-5">
+                                <td colspan="10" class="text-center text-muted py-5">
                                     <div class="d-flex flex-column align-items-center">
                                         <i class="fas fa-user-friends fa-3x mb-3" style="color: #d1d5db; opacity: 0.5;"></i>
                                         <p class="mb-0">No leads found.</p>

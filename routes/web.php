@@ -36,6 +36,8 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\BusinessFirmController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\ProformaInvoiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -51,22 +53,48 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
+    // User Management Routes - Permission based
+    Route::middleware(['permission:view users'])->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    });
+    
+    Route::middleware(['permission:create users'])->group(function () {
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    });
+    
+    Route::middleware(['permission:edit users'])->group(function () {
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
+    });
+    
+    Route::middleware(['permission:delete users'])->group(function () {
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+    
+    // Role Management Routes - Permission based
+    Route::middleware(['permission:view roles'])->group(function () {
+        Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
+        Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+    });
+    
+    Route::middleware(['permission:create roles'])->group(function () {
+        Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
+    });
+    
+    Route::middleware(['permission:edit roles'])->group(function () {
+        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    });
+    
+    Route::middleware(['permission:delete roles'])->group(function () {
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    });
+    
     // Admin Routes - Require Admin or Super Admin role
     Route::middleware(['role:Admin|Super Admin'])->group(function () {
         Route::get('/admin', function () {
             return view('admin.dashboard');
         })->name('admin.dashboard');
-        
-        // User Management Routes
-        Route::resource('users', UserController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
-        Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
-        
-        // Role Management Routes
-        Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
-        Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
-        Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
-        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
         
         // Machine Category Routes
         Route::resource('machine-categories', MachineCategoryController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -140,27 +168,14 @@ Route::middleware('auth')->group(function () {
         // Delivery Term Routes
         Route::resource('delivery-terms', DeliveryTermController::class)->only(['index', 'store', 'update', 'destroy']);
         
-        // Lead Management Routes
+        // Lead Management Routes (Admin only for setup)
         Route::resource('businesses', BusinessController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('states', StateController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('cities', CityController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('areas', AreaController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('statuses', StatusController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('leads', LeadController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-        Route::get('/leads/{lead}/convert-to-contract', [LeadController::class, 'convertToContract'])->name('leads.convert-to-contract');
-        Route::post('/leads/{lead}/convert-to-contract', [LeadController::class, 'storeContract'])->name('leads.store-contract');
-        Route::get('/leads/cities/{state_id}', [LeadController::class, 'getCities'])->name('leads.cities');
-        Route::get('/leads/areas/{city_id}', [LeadController::class, 'getAreas'])->name('leads.areas');
-        Route::get('/leads/machine-models/{brand_id}', [LeadController::class, 'getMachineModels'])->name('leads.machine-models');
         
-        // Contract Routes
-        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
-        Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->name('contracts.edit');
-        Route::put('/contracts/{contract}', [ContractController::class, 'update'])->name('contracts.update');
-        Route::delete('/contracts/{contract}', [ContractController::class, 'destroy'])->name('contracts.destroy');
-        Route::get('/contracts/{contract}/signature', [ContractController::class, 'signature'])->name('contracts.signature');
-        Route::post('/contracts/{contract}/signature', [ContractController::class, 'storeSignature'])->name('contracts.store-signature');
-        Route::get('/contracts/{contract}/download-pdf', [ContractController::class, 'downloadPdf'])->name('contracts.download-pdf');
+        // Contract Routes (moved outside role middleware, will be permission-based)
         
         // Contract Approval Routes (with permissions)
         Route::middleware(['permission:view contract approvals'])->group(function () {
@@ -172,7 +187,6 @@ Route::middleware('auth')->group(function () {
         Route::middleware(['permission:reject contracts'])->group(function () {
             Route::post('/contracts/{contract}/reject', [ContractController::class, 'reject'])->name('contracts.reject');
         });
-        Route::get('/leads/category-items/{category_id}', [LeadController::class, 'getCategoryItems'])->name('leads.category-items');
         
         // Business Firm Routes
         Route::resource('business-firms', BusinessFirmController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -190,6 +204,84 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/contract-details-settings', [SettingController::class, 'updateContractDetails'])
             ->name('settings.update-contract-details')
             ->middleware('permission:edit settings');
+    });
+    
+    // Lead Management Routes - Permission based
+    // Note: create route must come before {lead} route to avoid route conflicts
+    Route::middleware(['permission:create leads'])->group(function () {
+        Route::get('/leads/create', [LeadController::class, 'create'])->name('leads.create');
+        Route::post('/leads', [LeadController::class, 'store'])->name('leads.store');
+    });
+    
+    Route::middleware(['permission:view leads'])->group(function () {
+        Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
+        Route::get('/leads/{lead}', [LeadController::class, 'show'])->name('leads.show');
+    });
+    
+    Route::middleware(['permission:edit leads'])->group(function () {
+        Route::get('/leads/{lead}/edit', [LeadController::class, 'edit'])->name('leads.edit');
+        Route::put('/leads/{lead}', [LeadController::class, 'update'])->name('leads.update');
+    });
+    
+    Route::middleware(['permission:delete leads'])->group(function () {
+        Route::delete('/leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
+    });
+    
+    Route::middleware(['permission:convert contract'])->group(function () {
+        Route::get('/leads/{lead}/convert-to-contract', [LeadController::class, 'convertToContract'])->name('leads.convert-to-contract');
+        Route::post('/leads/{lead}/convert-to-contract', [LeadController::class, 'storeContract'])->name('leads.store-contract');
+    });
+    
+    // Customer Routes - Show approved contracts as customers
+    Route::middleware(['permission:view customers'])->group(function () {
+        Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+    });
+    
+    Route::middleware(['permission:delete customers'])->group(function () {
+        Route::delete('/customers/{contract}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    });
+    
+    // Contract Routes - Permission based (moved from Admin role group)
+    // Users with "convert contract" or "view contract approvals" can view contracts
+    Route::middleware(['permission:view contract approvals|convert contract'])->group(function () {
+        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show');
+        Route::get('/contracts/{contract}/download-pdf', [ContractController::class, 'downloadPdf'])->name('contracts.download-pdf');
+    });
+    
+    // Users with "convert contract" or "view contract approvals" can edit contracts they created
+    Route::middleware(['permission:view contract approvals|convert contract'])->group(function () {
+        Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->name('contracts.edit');
+        Route::put('/contracts/{contract}', [ContractController::class, 'update'])->name('contracts.update');
+        Route::get('/contracts/{contract}/signature', [ContractController::class, 'signature'])->name('contracts.signature');
+        Route::post('/contracts/{contract}/signature', [ContractController::class, 'storeSignature'])->name('contracts.store-signature');
+    });
+    
+    // Only users with "view contract approvals" can delete contracts
+    Route::middleware(['permission:view contract approvals'])->group(function () {
+        Route::delete('/contracts/{contract}', [ContractController::class, 'destroy'])->name('contracts.destroy');
+    });
+    
+    // Proforma Invoice Routes
+    Route::middleware(['permission:view proforma invoices|create proforma invoices'])->group(function () {
+        Route::get('/proforma-invoices/create', [ProformaInvoiceController::class, 'create'])->name('proforma-invoices.create');
+    });
+    
+    Route::middleware(['permission:create proforma invoices'])->group(function () {
+        Route::post('/proforma-invoices', [ProformaInvoiceController::class, 'store'])->name('proforma-invoices.store');
+        Route::get('/contracts/{contract}/contract-details', [ProformaInvoiceController::class, 'getContractDetails'])->name('proforma-invoices.contract-details');
+    });
+    
+    Route::middleware(['permission:view proforma invoices'])->group(function () {
+        Route::get('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'show'])->name('proforma-invoices.show');
+    });
+    
+    // Lead helper routes (available to anyone with view leads permission)
+    Route::middleware(['permission:view leads|create leads|edit leads'])->group(function () {
+        Route::get('/leads/cities/{state_id}', [LeadController::class, 'getCities'])->name('leads.cities');
+        Route::get('/leads/areas/{city_id}', [LeadController::class, 'getAreas'])->name('leads.areas');
+        Route::get('/leads/machine-models/{brand_id}', [LeadController::class, 'getMachineModels'])->name('leads.machine-models');
+        Route::get('/leads/category-items/{category_id}', [LeadController::class, 'getCategoryItems'])->name('leads.category-items');
     });
     
     // Permission-based Routes Examples

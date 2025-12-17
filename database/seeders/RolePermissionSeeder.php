@@ -44,6 +44,23 @@ class RolePermissionSeeder extends Seeder
             'view contract approvals',
             'approve contracts',
             'reject contracts',
+            
+            // Customer Management
+            'view customers',
+            'delete customers',
+            
+            // Lead Management
+            'view leads',
+            'create leads',
+            'edit leads',
+            'delete leads',
+            'convert contract',
+            
+            // Proforma Invoice Management
+            'view proforma invoices',
+            'create proforma invoices',
+            'edit proforma invoices',
+            'delete proforma invoices',
         ];
 
         foreach ($permissions as $permission) {
@@ -70,6 +87,7 @@ class RolePermissionSeeder extends Seeder
             'view contract approvals',
             'approve contracts',
             'reject contracts',
+            'view customers',
         ]);
 
         // Manager - View and edit permissions
@@ -81,6 +99,7 @@ class RolePermissionSeeder extends Seeder
             'view contract approvals',
             'approve contracts',
             'reject contracts',
+            'view customers',
         ]);
 
         // Staff - Limited permissions
@@ -90,5 +109,17 @@ class RolePermissionSeeder extends Seeder
         // User - Basic permissions
         $user = Role::firstOrCreate(['name' => 'User']);
         // No specific permissions for User
+        
+        // Department Lead Manager - Role for department users with lead management permissions
+        $departmentLeadManager = Role::firstOrCreate(['name' => 'Department Lead Manager']);
+        $departmentLeadManager->givePermissionTo([
+            'view leads',
+            'create leads',
+            'edit leads',
+            'delete leads',
+            'convert contract',
+            'view contract approvals', // Allow viewing contracts they created
+            'view customers', // Allow viewing customers from approved contracts
+        ]);
     }
 }

@@ -34,15 +34,23 @@ class RoleController extends Controller
             'name' => 'required|string|max:255|unique:roles,name',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
+            'assignable_roles' => 'nullable|array',
+            'assignable_roles.*' => 'exists:roles,id',
         ]);
 
-        $role = Role::create(['name' => $request->name]);
+        $role = Role::create([
+            'name' => $request->name,
+            'assignable_roles' => $request->has('assignable_roles') ? json_encode($request->assignable_roles) : null,
+        ]);
 
         if ($request->has('permissions') && is_array($request->permissions)) {
             $permissionIds = $request->permissions;
             $permissions = \Spatie\Permission\Models\Permission::whereIn('id', $permissionIds)->get();
             $role->givePermissionTo($permissions);
         }
+
+        // Clear permission cache after creation
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         return redirect()->route('roles.create')
             ->with('success', 'Role created successfully with permissions.');
@@ -61,9 +69,16 @@ class RoleController extends Controller
      */
     public function edit(Role $role)
     {
+        // Clear permission cache to ensure fresh data
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        
         $permissions = \Spatie\Permission\Models\Permission::all();
         $roles = Role::with('permissions')->orderBy('name')->get();
+        
+        // Reload role with permissions
+        $role->refresh();
         $role->load('permissions');
+        
         return view('roles.edit', compact('role', 'permissions', 'roles'));
     }
 
@@ -76,9 +91,14 @@ class RoleController extends Controller
             'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
+            'assignable_roles' => 'nullable|array',
+            'assignable_roles.*' => 'exists:roles,id',
         ]);
 
-        $role->update(['name' => $request->name]);
+        $role->update([
+            'name' => $request->name,
+            'assignable_roles' => $request->has('assignable_roles') ? json_encode($request->assignable_roles) : null,
+        ]);
 
         // Sync permissions
         if ($request->has('permissions') && is_array($request->permissions)) {
@@ -89,7 +109,10 @@ class RoleController extends Controller
             $role->syncPermissions([]);
         }
 
-        return redirect()->route('roles.create')
+        // Clear permission cache after update
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        return redirect()->route('roles.edit', $role)
             ->with('success', 'Role updated successfully.');
     }
 

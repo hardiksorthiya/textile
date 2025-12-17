@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta charset="utf-8">
     <title>Contract - {{ $contract->contract_number }}</title>
     <style>
@@ -90,7 +91,6 @@
         .machine-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
         }
         .machine-table td {
             padding: 6px 8px;
@@ -126,6 +126,9 @@
             text-align: right;
             font-size: 14px;
             font-weight: bold;
+        }
+        .rupee-symbol {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
         }
         .other-details-section {
             margin-top: 0;
@@ -390,9 +393,121 @@
     </div>
     @endif
 
-    <!-- Total Amount -->
+    <!-- Total Amount and Token Amount -->
     <div class="total-section">
-        <strong>Total Contract Amount: ${{ number_format($contract->total_amount ?? 0, 2) }}</strong>
+        <div style="margin-bottom: 10px;">
+            <strong>Total Contract Amount: ${{ number_format($contract->total_amount ?? 0, 2) }}</strong>
+        </div>
+        @if($contract->token_amount)
+        <div>
+            <strong>Token Amount: <span class="rupee-symbol">&#8377;</span>{{ number_format($contract->token_amount, 2) }}</strong>
+        </div>
+        @endif
+    </div>
+
+    <!-- Signatures Section -->
+    <div style="margin-top: 40px; page-break-inside: avoid;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+            <tr>
+                <!-- Creator Signature (User who created the contract) -->
+                <td style="width: {{ $contract->approval_status === 'approved' && $contract->approver ? '33.33' : '50' }}%; padding: 20px; vertical-align: top; border-top: 2px solid #5e5e5e;">
+                    <div style="text-align: center;">
+                        <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;">Created By</div>
+                        @php
+                            $creator = $contract->creator;
+                            $creatorSignatureImg = '';
+                            if ($creator) {
+                                // Check if signature exists and is not empty
+                                if (!empty($creator->signature)) {
+                                    $signaturePath = storage_path('app/public/' . $creator->signature);
+                                    // Check if file exists
+                                    if (file_exists($signaturePath) && is_readable($signaturePath)) {
+                                        try {
+                                            $signatureData = file_get_contents($signaturePath);
+                                            if ($signatureData !== false && !empty($signatureData)) {
+                                                $signatureBase64 = base64_encode($signatureData);
+                                                $signatureMime = mime_content_type($signaturePath);
+                                                if (!$signatureMime) {
+                                                    // Try to detect from extension
+                                                    $ext = strtolower(pathinfo($signaturePath, PATHINFO_EXTENSION));
+                                                    $signatureMime = $ext === 'jpg' || $ext === 'jpeg' ? 'image/jpeg' : ($ext === 'png' ? 'image/png' : ($ext === 'gif' ? 'image/gif' : 'image/png'));
+                                                }
+                                                $creatorSignatureImg = 'data:' . $signatureMime . ';base64,' . $signatureBase64;
+                                            }
+                                        } catch (\Exception $e) {
+                                            // Signature file exists but couldn't be read
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
+                        @if(!empty($creatorSignatureImg))
+                            <img src="{{ $creatorSignatureImg }}" alt="Creator Signature" style="max-height: 100px; max-width: 100%; object-fit: contain; margin-bottom: 10px;">
+                        @endif
+                        <div style="border-top: 1px solid #5e5e5e; padding-top: 5px; margin-top: 10px; font-size: 12px;">
+                            @if($creator)
+                                {{ $creator->name }}
+                            @else
+                                Contract Creator
+                            @endif
+                        </div>
+                    </div>
+                </td>
+                
+                <!-- Approver Signature (User who approved the contract) - Only show if approved -->
+                @if($contract->approval_status === 'approved' && $contract->approver)
+                <td style="width: 33.33%; padding: 20px; vertical-align: top; border-top: 2px solid #5e5e5e;">
+                    <div style="text-align: center;">
+                        <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;">Approved By</div>
+                        @php
+                            $approverSignatureImg = '';
+                            if ($contract->approver && $contract->approver->signature && !empty($contract->approver->signature)) {
+                                $approverSignaturePath = storage_path('app/public/' . $contract->approver->signature);
+                                if (file_exists($approverSignaturePath) && is_readable($approverSignaturePath)) {
+                                    try {
+                                        $approverSignatureData = file_get_contents($approverSignaturePath);
+                                        if ($approverSignatureData !== false && !empty($approverSignatureData)) {
+                                            $approverSignatureBase64 = base64_encode($approverSignatureData);
+                                            $approverSignatureMime = mime_content_type($approverSignaturePath);
+                                            if (!$approverSignatureMime) {
+                                                $ext = strtolower(pathinfo($approverSignaturePath, PATHINFO_EXTENSION));
+                                                $approverSignatureMime = $ext === 'jpg' || $ext === 'jpeg' ? 'image/jpeg' : ($ext === 'png' ? 'image/png' : ($ext === 'gif' ? 'image/gif' : 'image/png'));
+                                            }
+                                            $approverSignatureImg = 'data:' . $approverSignatureMime . ';base64,' . $approverSignatureBase64;
+                                        }
+                                    } catch (\Exception $e) {
+                                        // Signature file exists but couldn't be read
+                                    }
+                                }
+                            }
+                        @endphp
+                        @if(!empty($approverSignatureImg))
+                            <img src="{{ $approverSignatureImg }}" alt="Approver Signature" style="max-height: 100px; max-width: 100%; object-fit: contain; margin-bottom: 10px;">
+                        @endif
+                        <div style="border-top: 1px solid #5e5e5e; padding-top: 5px; margin-top: 10px; font-size: 12px;">
+                            {{ $contract->approver->name }}
+                            @if($contract->approved_at)
+                                <br><small style="font-size: 10px;">{{ $contract->approved_at->format('M d, Y') }}</small>
+                            @endif
+                        </div>
+                    </div>
+                </td>
+                @endif
+                
+                <!-- Customer Signature -->
+                <td style="width: {{ $contract->approval_status === 'approved' && $contract->approver ? '33.33' : '50' }}%; padding: 20px; vertical-align: top; border-top: 2px solid #5e5e5e;">
+                    <div style="text-align: center;">
+                        <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;">Customer Signature</div>
+                        @if($contract->customer_signature)
+                            <img src="{{ $contract->customer_signature }}" alt="Customer Signature" style="max-height: 100px; max-width: 100%; object-fit: contain; margin-bottom: 10px;">
+                        @endif
+                        <div style="border-top: 1px solid #5e5e5e; padding-top: 5px; margin-top: 10px; font-size: 12px;">
+                            {{ $contract->buyer_name }}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>

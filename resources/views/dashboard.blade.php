@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <!-- Total Users Card -->
@@ -131,7 +131,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-800">{{ $user->name }}</p>
-                            <p class="text-xs text-gray-500">{{ $user->email }}</p>
+                            <p class="text-xs text-gray-500">{{ $user->phone ?? '-' }}</p>
                         </div>
                     </div>
                     <span class="text-xs px-2 py-1 bg-red-100 text-red-600 rounded">

@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         // Create default admin user
         $admin = User::factory()->create([
             'name' => 'Super Admin',
-            'email' => 'admin@textile.com',
+            'phone' => '1234567890',
             'password' => bcrypt('password'),
         ]);
         $admin->assignRole('Super Admin');
@@ -31,14 +31,14 @@ class DatabaseSeeder extends Seeder
         // Create test users with different roles
         $manager = User::factory()->create([
             'name' => 'Manager User',
-            'email' => 'manager@textile.com',
+            'phone' => '1234567891',
             'password' => bcrypt('password'),
         ]);
         $manager->assignRole('Manager');
 
         $staff = User::factory()->create([
             'name' => 'Staff User',
-            'email' => 'staff@textile.com',
+            'phone' => '1234567892',
             'password' => bcrypt('password'),
         ]);
         $staff->assignRole('Staff');

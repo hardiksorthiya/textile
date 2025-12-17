@@ -13,8 +13,30 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with('roles')->paginate(10);
-        $roles = Role::all();
+        $query = User::with(['roles', 'creator']);
+        
+        // If user is not Admin or Super Admin, show only users they created
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $query->where('created_by', auth()->id());
+        }
+        
+        $users = $query->orderBy('created_at', 'desc')->paginate(10);
+        
+        // Get roles that current user's role can assign
+        $currentUserRole = auth()->user()->roles->first();
+        $assignableRoleIds = [];
+        
+        if ($currentUserRole && $currentUserRole->assignable_roles) {
+            $assignableRoleIds = json_decode($currentUserRole->assignable_roles, true) ?? [];
+        }
+        
+        // If Admin/Super Admin or no restrictions, show all roles
+        if (auth()->user()->hasAnyRole(['Admin', 'Super Admin']) || empty($assignableRoleIds)) {
+            $roles = Role::where('name', '!=', 'Super Admin')->orderBy('name')->get();
+        } else {
+            // Show only assignable roles
+            $roles = Role::whereIn('id', $assignableRoleIds)->orderBy('name')->get();
+        }
         
         return view('users.index', compact('users', 'roles'));
     }
@@ -48,17 +70,33 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        // Get roles that current user's role can assign
+        $currentUserRole = auth()->user()->roles->first();
+        $assignableRoleIds = [];
+        
+        if ($currentUserRole && $currentUserRole->assignable_roles) {
+            $assignableRoleIds = json_decode($currentUserRole->assignable_roles, true) ?? [];
+        }
+        
+        // Validate role assignment
+        $roleValidation = 'required|exists:roles,name';
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin']) && !empty($assignableRoleIds)) {
+            $allowedRoleNames = Role::whereIn('id', $assignableRoleIds)->pluck('name')->toArray();
+            $roleValidation .= '|in:' . implode(',', $allowedRoleNames);
+        }
+        
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'required|string|max:20|unique:users,phone',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|exists:roles,name'
+            'role' => $roleValidation
         ]);
 
         $user = User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'phone' => $request->phone,
             'password' => bcrypt($request->password),
+            'created_by' => auth()->id(),
         ]);
 
         $user->assignRole($request->role);
@@ -80,7 +118,27 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $roles = Role::all();
+        // Check if user can edit this user (must be Admin/Super Admin or the creator)
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin']) && $user->created_by !== auth()->id()) {
+            abort(403, 'You can only edit users you created.');
+        }
+        
+        // Get roles that current user's role can assign
+        $currentUserRole = auth()->user()->roles->first();
+        $assignableRoleIds = [];
+        
+        if ($currentUserRole && $currentUserRole->assignable_roles) {
+            $assignableRoleIds = json_decode($currentUserRole->assignable_roles, true) ?? [];
+        }
+        
+        // If Admin/Super Admin or no restrictions, show all roles
+        if (auth()->user()->hasAnyRole(['Admin', 'Super Admin']) || empty($assignableRoleIds)) {
+            $roles = Role::where('name', '!=', 'Super Admin')->orderBy('name')->get();
+        } else {
+            // Show only assignable roles
+            $roles = Role::whereIn('id', $assignableRoleIds)->orderBy('name')->get();
+        }
+        
         return view('users.edit', compact('user', 'roles'));
     }
 
@@ -89,16 +147,36 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        // Check if user can update this user (must be Admin/Super Admin or the creator)
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin']) && $user->created_by !== auth()->id()) {
+            abort(403, 'You can only update users you created.');
+        }
+        
+        // Get roles that current user's role can assign
+        $currentUserRole = auth()->user()->roles->first();
+        $assignableRoleIds = [];
+        
+        if ($currentUserRole && $currentUserRole->assignable_roles) {
+            $assignableRoleIds = json_decode($currentUserRole->assignable_roles, true) ?? [];
+        }
+        
+        // Validate role assignment
+        $roleValidation = 'required|exists:roles,name';
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin']) && !empty($assignableRoleIds)) {
+            $allowedRoleNames = Role::whereIn('id', $assignableRoleIds)->pluck('name')->toArray();
+            $roleValidation .= '|in:' . implode(',', $allowedRoleNames);
+        }
+        
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'required|string|max:20|unique:users,phone,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|exists:roles,name'
+            'role' => $roleValidation
         ]);
 
         $user->update([
             'name' => $request->name,
-            'email' => $request->email,
+            'phone' => $request->phone,
         ]);
 
         if ($request->filled('password')) {
@@ -122,6 +200,12 @@ class UserController extends Controller
         if ($user->hasRole('Super Admin')) {
             return redirect()->route('users.index')
                 ->with('error', 'Cannot delete Super Admin user.');
+        }
+        
+        // Check if user can delete this user (must be Admin/Super Admin or the creator)
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin']) && $user->created_by !== auth()->id()) {
+            return redirect()->route('users.index')
+                ->with('error', 'You can only delete users you created.');
         }
 
         $user->delete();

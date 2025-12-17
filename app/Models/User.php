@@ -21,7 +21,12 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
+        'department_id',
+        'created_by',
+        'profile_image',
+        'signature',
     ];
 
     /**
@@ -45,5 +50,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the department that the user belongs to.
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Get the user who created this user.
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the contracts created by this user.
+     */
+    public function createdContracts()
+    {
+        return $this->hasMany(Contract::class, 'created_by');
     }
 }
