@@ -5,11 +5,25 @@
             <p class="text-muted mb-0">Proforma Invoice: {{ $proformaInvoice->proforma_invoice_number }}</p>
         </div>
         <div class="d-flex gap-2">
+            @can('edit proforma invoices')
+            <a href="{{ route('proforma-invoices.edit', $proformaInvoice) }}" class="btn btn-warning">
+                <i class="fas fa-edit me-2"></i>Edit
+            </a>
+            @endcan
+            @can('delete proforma invoices')
+            <form action="{{ route('proforma-invoices.destroy', $proformaInvoice) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this proforma invoice?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash me-2"></i>Delete
+                </button>
+            </form>
+            @endcan
+            <a href="{{ route('proforma-invoices.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to PI List
+            </a>
             <a href="{{ route('proforma-invoices.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>Create New
-            </a>
-            <a href="{{ route('contracts.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Back to Contracts
             </a>
         </div>
     </div>
@@ -43,6 +57,19 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold mb-1" style="color: #6b7280; font-size: 0.875rem;">Company Name</label>
                             <div style="color: #1f2937;">{{ $proformaInvoice->contract->company_name ?? 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold mb-1" style="color: #6b7280; font-size: 0.875rem;">Seller</label>
+                            <div style="color: #1f2937;">{{ $proformaInvoice->seller->seller_name ?? 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold mb-1" style="color: #6b7280; font-size: 0.875rem;">PI Layout</label>
+                            <div style="color: #1f2937;">
+                                {{ $layout->name ?? 'Default Layout' }}
+                                @if($layout && $layout->is_default)
+                                    <span class="badge bg-primary ms-2">Default</span>
+                                @endif
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold mb-1" style="color: #6b7280; font-size: 0.875rem;">Created By</label>

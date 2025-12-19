@@ -102,6 +102,9 @@ Route::middleware('auth')->group(function () {
         // Seller Routes
         Route::resource('sellers', SellerController::class)->only(['index', 'store', 'update', 'destroy']);
         
+        // PI Layout Routes
+        Route::resource('pi-layouts', \App\Http\Controllers\PILayoutController::class);
+        
         // Country Routes
         Route::resource('countries', CountryController::class)->only(['index', 'store', 'update', 'destroy']);
         
@@ -267,13 +270,23 @@ Route::middleware('auth')->group(function () {
         Route::get('/proforma-invoices/create', [ProformaInvoiceController::class, 'create'])->name('proforma-invoices.create');
     });
     
+    Route::middleware(['permission:view proforma invoices'])->group(function () {
+        Route::get('/proforma-invoices', [ProformaInvoiceController::class, 'index'])->name('proforma-invoices.index');
+        Route::get('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'show'])->name('proforma-invoices.show');
+    });
+    
     Route::middleware(['permission:create proforma invoices'])->group(function () {
         Route::post('/proforma-invoices', [ProformaInvoiceController::class, 'store'])->name('proforma-invoices.store');
         Route::get('/contracts/{contract}/contract-details', [ProformaInvoiceController::class, 'getContractDetails'])->name('proforma-invoices.contract-details');
     });
     
-    Route::middleware(['permission:view proforma invoices'])->group(function () {
-        Route::get('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'show'])->name('proforma-invoices.show');
+    Route::middleware(['permission:edit proforma invoices'])->group(function () {
+        Route::get('/proforma-invoices/{proformaInvoice}/edit', [ProformaInvoiceController::class, 'edit'])->name('proforma-invoices.edit');
+        Route::put('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'update'])->name('proforma-invoices.update');
+    });
+    
+    Route::middleware(['permission:delete proforma invoices'])->group(function () {
+        Route::delete('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'destroy'])->name('proforma-invoices.destroy');
     });
     
     // Lead helper routes (available to anyone with view leads permission)

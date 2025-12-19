@@ -8,6 +8,7 @@ class ProformaInvoice extends Model
 {
     protected $fillable = [
         'contract_id',
+        'seller_id',
         'proforma_invoice_number',
         'created_by',
         'total_amount',
@@ -55,5 +56,10 @@ class ProformaInvoice extends Model
     public function proformaInvoiceMachines()
     {
         return $this->hasMany(ProformaInvoiceMachine::class);
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class);
     }
 }

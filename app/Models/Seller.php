@@ -18,6 +18,7 @@ class Seller extends Model
         'pi_short_name',
         'gst_no',
         'signature',
+        'pi_layout_id',
     ];
 
     public function country()
@@ -33,5 +34,10 @@ class Seller extends Model
     public function bankDetails()
     {
         return $this->hasMany(SellerBankDetail::class);
+    }
+
+    public function piLayout()
+    {
+        return $this->belongsTo(PILayout::class);
     }
 }

@@ -1,121 +1,84 @@
 <x-app-layout>
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
-            <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Create Proforma Invoice</h1>
-            <p class="text-muted mb-0">Create a proforma invoice from an approved contract</p>
+            <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Edit Proforma Invoice</h1>
+            <p class="text-muted mb-0">Edit proforma invoice: {{ $proformaInvoice->proforma_invoice_number }}</p>
         </div>
-        <a href="{{ route('contracts.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Back to Contracts
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('proforma-invoices.show', $proformaInvoice) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to View
+            </a>
+            <a href="{{ route('proforma-invoices.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-list me-2"></i>PI List
+            </a>
+        </div>
     </div>
 
-    <div x-data="proformaInvoiceForm({{ $selectedContractId ?? 'null' }})" x-init="init()">
-        <!-- Search Section -->
-        <div class="card shadow-sm border-0 mb-4" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
-            <div class="card-header border-0 pb-0" style="background: transparent;">
-                <div class="d-flex align-items-center py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
-                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
-                        <i class="fas fa-search text-white"></i>
-                    </div>
-                    <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Search Contract</h2>
-                </div>
-            </div>
-            <div class="card-body p-4">
-                <form method="GET" action="{{ route('proforma-invoices.create') }}" id="searchForm">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold" style="color: #374151;">Sales Manager</label>
-                            <select name="sales_manager_id" class="form-select" style="border-radius: 8px; border: 1px solid #e5e7eb;" onchange="document.getElementById('searchForm').submit();">
-                                <option value="">All Sales Managers</option>
-                                @foreach($salesManagers as $manager)
-                                    <option value="{{ $manager->id }}" {{ request('sales_manager_id') == $manager->id ? 'selected' : '' }}>{{ $manager->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold" style="color: #374151;">Contract Number</label>
-                            <input type="text" name="contract_number" value="{{ request('contract_number') }}" 
-                                   class="form-control" placeholder="Enter contract number" 
-                                   style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold" style="color: #374151;">Customer Name</label>
-                            <input type="text" name="customer_name" value="{{ request('customer_name') }}" 
-                                   class="form-control" placeholder="Enter customer name" 
-                                   style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                        </div>
-                        <div class="col-12">
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search me-2"></i>Search
-                                </button>
-                                <a href="{{ route('proforma-invoices.create') }}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-redo me-2"></i>Reset
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Contracts List -->
-        @if(request()->hasAny(['sales_manager_id', 'contract_number', 'customer_name']) || $contracts->count() > 0)
-        <div class="card shadow-sm border-0 mb-4" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
-            <div class="card-header border-0 pb-0" style="background: transparent;">
-                <div class="d-flex align-items-center py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
-                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
-                        <i class="fas fa-file-contract text-white"></i>
-                    </div>
-                    <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Select Contract</h2>
-                </div>
-            </div>
-            <div class="card-body p-4">
-                @forelse($contracts as $contract)
-                    <div class="card mb-3" style="cursor: pointer; border: 2px solid #e5e7eb; transition: all 0.2s;" 
-                         :class="{ 'border-primary': selectedContractId === {{ $contract->id }} }"
-                         @click="selectContract({{ $contract->id }})"
-                         onmouseover="this.style.borderColor='var(--primary-color)'" 
-                         onmouseout="this.style.borderColor='#e5e7eb'">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="fw-bold mb-1" style="color: #1f2937;">{{ $contract->contract_number }}</h5>
-                                    <p class="mb-1" style="color: #6b7280;">
-                                        <strong>Customer:</strong> {{ $contract->buyer_name }}
-                                        @if($contract->company_name)
-                                            ({{ $contract->company_name }})
-                                        @endif
-                                    </p>
-                                    <p class="mb-0 small text-muted">
-                                        <strong>Sales Manager:</strong> {{ $contract->creator->name ?? 'N/A' }} | 
-                                        <strong>Amount:</strong> ${{ number_format($contract->total_amount ?? 0, 2) }}
-                                    </p>
-                                </div>
-                                <div>
-                                    <i class="fas fa-chevron-right text-primary"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-file-contract fa-3x mb-3" style="opacity: 0.3;"></i>
-                        <p>No contracts found. Please adjust your search criteria.</p>
-                    </div>
-                @endforelse
-
-                @if($contracts->hasPages())
-                    <div class="mt-3">
-                        {{ $contracts->links() }}
-                    </div>
-                @endif
-            </div>
-        </div>
-        @endif
-
-        <!-- Proforma Invoice Form (shown when contract is selected) -->
-        <div x-show="selectedContractId" x-cloak>
+    <div x-data="proformaInvoiceForm({{ $proformaInvoice->contract_id }}, @js([
+        'proformaInvoice' => [
+            'id' => $proformaInvoice->id,
+            'seller_id' => $proformaInvoice->seller_id,
+            'type_of_sale' => $proformaInvoice->type_of_sale,
+            'currency' => $proformaInvoice->currency,
+            'usd_rate' => $proformaInvoice->usd_rate,
+            'commission' => $proformaInvoice->commission,
+            'buyer_company_name' => $proformaInvoice->buyer_company_name,
+            'pan' => $proformaInvoice->pan,
+            'gst' => $proformaInvoice->gst,
+            'phone_number' => $proformaInvoice->phone_number,
+            'phone_number_2' => $proformaInvoice->phone_number_2,
+            'ifc_certificate_number' => $proformaInvoice->ifc_certificate_number,
+            'billing_address' => $proformaInvoice->billing_address,
+            'shipping_address' => $proformaInvoice->shipping_address,
+            'overseas_freight' => $proformaInvoice->overseas_freight,
+            'port_expenses_clearing' => $proformaInvoice->port_expenses_clearing,
+            'gst_percentage' => $proformaInvoice->gst_percentage,
+            'notes' => $proformaInvoice->notes,
+        ],
+        'machines' => $proformaInvoice->proformaInvoiceMachines->map(function($piMachine) use ($proformaInvoice) {
+            return [
+                'tempId' => 'temp_' . $piMachine->id,
+                'contract_machine_id' => (string)$piMachine->contract_machine_id,
+                'machine_category_id' => (string)$piMachine->machine_category_id,
+                'quantity' => $piMachine->quantity,
+                'amount' => $piMachine->amount,
+                'amc_price' => $piMachine->amc_price ?? 0,
+                'pi_price_plus_amc' => $piMachine->pi_price_plus_amc ?? 0,
+                'total_pi_price' => $piMachine->total_pi_price ?? 0,
+                'description' => $piMachine->description ?? '',
+                'gst_percentage' => $proformaInvoice->gst_percentage ?? 18,
+                'overseas_freight' => 0,
+                'port_expenses_clearing' => 0,
+                'brand_id' => $piMachine->brand_id ? (string)$piMachine->brand_id : '',
+                'machine_model_id' => $piMachine->machine_model_id ? (string)$piMachine->machine_model_id : '',
+                'feeder_id' => $piMachine->feeder_id ? (string)$piMachine->feeder_id : '',
+                'machine_hook_id' => $piMachine->machine_hook_id ? (string)$piMachine->machine_hook_id : '',
+                'machine_e_read_id' => $piMachine->machine_e_read_id ? (string)$piMachine->machine_e_read_id : '',
+                'color_id' => $piMachine->color_id ? (string)$piMachine->color_id : '',
+                'machine_nozzle_id' => $piMachine->machine_nozzle_id ? (string)$piMachine->machine_nozzle_id : '',
+                'machine_dropin_id' => $piMachine->machine_dropin_id ? (string)$piMachine->machine_dropin_id : '',
+                'machine_beam_id' => $piMachine->machine_beam_id ? (string)$piMachine->machine_beam_id : '',
+                'machine_cloth_roller_id' => $piMachine->machine_cloth_roller_id ? (string)$piMachine->machine_cloth_roller_id : '',
+                'machine_software_id' => $piMachine->machine_software_id ? (string)$piMachine->machine_software_id : '',
+                'hsn_code_id' => $piMachine->hsn_code_id ? (string)$piMachine->hsn_code_id : '',
+                'wir_id' => $piMachine->wir_id ? (string)$piMachine->wir_id : '',
+                'machine_shaft_id' => $piMachine->machine_shaft_id ? (string)$piMachine->machine_shaft_id : '',
+                'machine_lever_id' => $piMachine->machine_lever_id ? (string)$piMachine->machine_lever_id : '',
+                'machine_chain_id' => $piMachine->machine_chain_id ? (string)$piMachine->machine_chain_id : '',
+                'machine_heald_wire_id' => $piMachine->machine_heald_wire_id ? (string)$piMachine->machine_heald_wire_id : '',
+                'delivery_term_id' => $piMachine->delivery_term_id ? (string)$piMachine->delivery_term_id : '',
+                // Additional properties needed for the form
+                'availableMachines' => [],
+                'categoryItems' => null,
+                'machineModels' => [],
+                'contractAmount' => 0,
+                'contractQuantityPerCategory' => 0,
+                'maxQuantity' => 0,
+            ];
+        })->toArray(),
+    ]))" x-init="init()">
+        <!-- Proforma Invoice Form -->
+        <div>
             <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
                 <div class="card-header border-0 pb-0" style="background: transparent;">
                     <div class="d-flex align-items-center py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
@@ -126,9 +89,10 @@
                     </div>
                 </div>
                 <div class="card-body p-4">
-                    <form action="{{ route('proforma-invoices.store') }}" method="POST" id="proformaInvoiceForm">
+                    <form action="{{ route('proforma-invoices.update', $proformaInvoice) }}" method="POST" id="proformaInvoiceForm">
                         @csrf
-                        <input type="hidden" name="contract_id" x-model="selectedContractId">
+                        @method('PUT')
+                        <input type="hidden" name="contract_id" value="{{ $proformaInvoice->contract_id }}">
 
                         <!-- Contract Info Display -->
                         <div x-show="contractData" class="alert alert-info mb-4">
@@ -272,9 +236,9 @@
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold" style="color: #374151;">PI Number</label>
                                     <div class="form-control bg-light fw-semibold" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                        <span x-text="piNumber || 'Select seller to generate PI number'"></span>
+                                        <span>{{ $proformaInvoice->proforma_invoice_number }}</span>
                                     </div>
-                                    <small class="text-muted">Auto-generated based on seller and date</small>
+                                    <small class="text-muted">PI Number cannot be changed</small>
                                 </div>
                             </div>
                         </div>
@@ -362,20 +326,17 @@
                                             </div>
 
                                             <div class="row g-3">
-                                                <!-- Machine Category Selection -->
+                                                <!-- Machine Category (Read-only in edit mode) -->
                                                 <div class="col-md-4">
                                                     <label class="form-label fw-semibold" style="color: #374151;">Machine Category <span class="text-danger">*</span></label>
-                                                    <select 
-                                                        :name="`machines[${index}][machine_category_id]`"
-                                                        x-model="machine.machine_category_id"
-                                                        @change="loadMachinesForCategory(machine.tempId, $event.target.value)"
-                                                        required
-                                                        class="form-select" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                                        <option value="">Select Category</option>
-                                                        <template x-for="category in contractData?.machinesByCategory || []" :key="category.category_id">
-                                                            <option :value="category.category_id" x-text="category.category_name"></option>
-                                                        </template>
-                                                    </select>
+                                                    <input type="text" 
+                                                           :value="getCategoryName(machine.machine_category_id)"
+                                                           readonly
+                                                           class="form-control bg-light" 
+                                                           style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                                    <input type="hidden" 
+                                                           :name="`machines[${index}][machine_category_id]`"
+                                                           x-model="machine.machine_category_id">
                                                 </div>
 
                                                 <!-- Hidden field for contract machine ID (auto-selected) -->
@@ -869,7 +830,7 @@
                         <!-- Notes -->
                         <div class="mb-4">
                             <label class="form-label fw-semibold" style="color: #374151;">Notes</label>
-                            <textarea name="notes" rows="3" class="form-control" 
+                            <textarea name="notes" x-model="notes" rows="3" class="form-control" 
                                       placeholder="Additional notes for proforma invoice" 
                                       style="border-radius: 8px; border: 1px solid #e5e7eb;"></textarea>
                         </div>
@@ -900,7 +861,7 @@
                                 <i class="fas fa-times me-2"></i>Cancel
                             </button>
                             <button type="submit" class="btn btn-primary" :disabled="totalAmount <= 0 || !typeOfSale">
-                                <i class="fas fa-save me-2"></i>Create Proforma Invoice
+                                <i class="fas fa-save me-2"></i>Update Proforma Invoice
                             </button>
                         </div>
                     </form>
@@ -910,47 +871,194 @@
     </div>
 
     <script>
-        function proformaInvoiceForm(initialContractId = null) {
+        function proformaInvoiceForm(initialContractId = null, initialPIData = null) {
             return {
                 selectedContractId: initialContractId,
                 contractData: null,
                 usedQuantitiesByCategory: {}, // Used quantities from existing PIs per category
                 selectedMachines: {},
                 selectedCategories: [],
-                addedMachines: [],
-                tempMachineIdCounter: 0,
+                addedMachines: initialPIData?.machines || [],
+                tempMachineIdCounter: (initialPIData?.machines?.length || 0) + 1,
                 totalAmount: 0,
-                sellerId: null,
-                piNumber: '',
-                typeOfSale: 'import',
-                currency: 'USD',
-                currencySymbol: '$',
-                usdRate: null,
-                commission: null,
+                sellerId: initialPIData?.proformaInvoice?.seller_id || null,
+                piNumber: '{{ $proformaInvoice->proforma_invoice_number }}',
+                typeOfSale: initialPIData?.proformaInvoice?.type_of_sale || 'import',
+                currency: initialPIData?.proformaInvoice?.currency || 'USD',
+                currencySymbol: (initialPIData?.proformaInvoice?.currency === 'INR') ? '₹' : '$',
+                usdRate: initialPIData?.proformaInvoice?.usd_rate || null,
+                commission: initialPIData?.proformaInvoice?.commission || null,
                 displayTotalAmount: 0,
-                buyerCompanyName: '',
-                pan: '',
-                gst: '',
-                phoneNumber: '',
-                phoneNumber2: '',
-                ifcCertificateNumber: '',
-                billingAddress: '',
-                shippingAddress: '',
+                buyerCompanyName: initialPIData?.proformaInvoice?.buyer_company_name || '',
+                pan: initialPIData?.proformaInvoice?.pan || '',
+                gst: initialPIData?.proformaInvoice?.gst || '',
+                phoneNumber: initialPIData?.proformaInvoice?.phone_number || '',
+                phoneNumber2: initialPIData?.proformaInvoice?.phone_number_2 || '',
+                ifcCertificateNumber: initialPIData?.proformaInvoice?.ifc_certificate_number || '',
+                billingAddress: initialPIData?.proformaInvoice?.billing_address || '',
+                shippingAddress: initialPIData?.proformaInvoice?.shipping_address || '',
                 copyBillingToShipping: false,
                 amcPrice: 0,
-                overseasFreight: 0,
-                portExpensesClearing: 0,
-                gstPercentage: 18,
+                overseasFreight: initialPIData?.proformaInvoice?.overseas_freight || 0,
+                portExpensesClearing: initialPIData?.proformaInvoice?.port_expenses_clearing || 0,
+                gstPercentage: initialPIData?.proformaInvoice?.gst_percentage || 18,
                 gstAmount: 0,
                 finalAmountWithGST: 0,
+                notes: initialPIData?.proformaInvoice?.notes || '',
 
                 async init() {
                     // Initialize default values
                     this.updateCurrencyAndFields();
-                    this.calculateFinalAmounts(); // Initialize calculations
                     
+                    // Load contract data first
                     if (this.selectedContractId) {
-                        await this.selectContract(this.selectedContractId);
+                        await this.selectContract(this.selectedContractId, true);
+                        
+                        // Pre-populate machines if editing (after contract is loaded)
+                        if (initialPIData?.machines && initialPIData.machines.length > 0 && this.contractData) {
+                            // Set selected categories based on machines
+                            const categoryIds = [...new Set(initialPIData.machines.map(m => m.machine_category_id))];
+                            this.selectedCategories = categoryIds;
+                            
+                            // Load details for each pre-populated machine
+                            for (const machineData of initialPIData.machines) {
+                                const machine = this.addedMachines.find(m => m.tempId === machineData.tempId);
+                                if (machine && machine.contract_machine_id) {
+                                    // Save the original values from machineData (source of truth) before loadMachineDetails overwrites them
+                                    const savedQuantity = machineData.quantity || 0;
+                                    const savedAmount = machineData.amount || 0;
+                                    const savedAmcPrice = machineData.amc_price || 0;
+                                    const savedDescription = machineData.description || '';
+                                    const savedGstPercentage = machineData.gst_percentage || this.gstPercentage || 18;
+                                    // Save brand and model IDs (important - these are strings) - get from machineData which is the source of truth
+                                    const savedBrandId = (machineData.brand_id && machineData.brand_id !== '' && machineData.brand_id !== null && machineData.brand_id !== undefined && machineData.brand_id !== '0') ? String(machineData.brand_id) : '';
+                                    const savedModelId = (machineData.machine_model_id && machineData.machine_model_id !== '' && machineData.machine_model_id !== null && machineData.machine_model_id !== undefined && machineData.machine_model_id !== '0') ? String(machineData.machine_model_id) : '';
+                                    
+                                    // STEP 1: Populate availableMachines for this category first (needed for form display)
+                                    if (machine.machine_category_id) {
+                                        const machines = this.getMachinesForCategory(String(machine.machine_category_id));
+                                        if (machines && machines.length > 0) {
+                                            machine.availableMachines = machines.map(m => ({...m}));
+                                        }
+                                        
+                                        // STEP 2: Load category items FIRST - this is critical for all specification dropdowns to work
+                                        await this.loadCategoryItemsForMachine(machine.tempId, machine.machine_category_id);
+                                        await this.$nextTick();
+                                        await this.$nextTick(); // Extra tick to ensure categoryItems is fully loaded
+                                    }
+                                    
+                                    // STEP 3: Temporarily clear brand_id and model_id to prevent loadMachineDetails from interfering
+                                    // We'll restore them after loadMachineDetails completes
+                                    machine.brand_id = '';
+                                    machine.machine_model_id = '';
+                                    
+                                    // STEP 4: Load machine details (will set contractAmount, maxQuantity, etc.)
+                                    // NOTE: This will NOT load category items again if already loaded, but will set contract specs
+                                    await this.loadMachineDetails(machine.tempId, machine.contract_machine_id);
+                                    await this.$nextTick();
+                                    
+                                    // STEP 5: Restore all saved PI values (overwrite contract values from loadMachineDetails)
+                                    machine.quantity = savedQuantity;
+                                    // Preserve the saved PI amount (user may have changed it from contract amount)
+                                    machine.amount = savedAmount > 0 ? savedAmount : (machine.contractAmount || 0);
+                                    machine.amc_price = savedAmcPrice;
+                                    machine.description = savedDescription;
+                                    machine.gst_percentage = savedGstPercentage;
+                                    machine.overseas_freight = machineData.overseas_freight || 0;
+                                    machine.port_expenses_clearing = machineData.port_expenses_clearing || 0;
+                                    
+                                    // STEP 6: Restore all other specification IDs FIRST (before brand/model - brand/model need to be restored last)
+                                    // Restore all other specification IDs - ensure values match option value formats
+                                    // Check each field and set only if it has a value
+                                    const specFields = {
+                                        'feeder_id': 'feeder_id',
+                                        'machine_hook_id': 'machine_hook_id',
+                                        'machine_e_read_id': 'machine_e_read_id',
+                                        'color_id': 'color_id',
+                                        'machine_nozzle_id': 'machine_nozzle_id',
+                                        'machine_dropin_id': 'machine_dropin_id',
+                                        'machine_beam_id': 'machine_beam_id',
+                                        'machine_cloth_roller_id': 'machine_cloth_roller_id',
+                                        'machine_software_id': 'machine_software_id',
+                                        'hsn_code_id': 'hsn_code_id',
+                                        'wir_id': 'wir_id',
+                                        'machine_shaft_id': 'machine_shaft_id',
+                                        'machine_lever_id': 'machine_lever_id',
+                                        'machine_chain_id': 'machine_chain_id',
+                                        'machine_heald_wire_id': 'machine_heald_wire_id',
+                                        'delivery_term_id': 'delivery_term_id'
+                                    };
+                                    
+                                    // Set all specification values from saved data
+                                    // Match the option value format: most use raw ID (number), brand/model use String(id)
+                                    for (const [key, value] of Object.entries(specFields)) {
+                                        if (machineData[value] !== null && machineData[value] !== undefined && machineData[value] !== '') {
+                                            // For most fields, keep as number (matches :value="feeder.id" format)
+                                            // Alpine.js x-model handles type coercion, but matching types is safer
+                                            const numValue = parseInt(machineData[value]);
+                                            machine[key] = isNaN(numValue) ? machineData[value] : numValue;
+                                        }
+                                    }
+                                    
+                                    // Force Alpine.js to update after all specs are set
+                                    await this.$nextTick();
+                                    await this.$nextTick(); // Extra tick to ensure DOM reactivity
+                                    
+                                    // STEP 7: Restore brand and model LAST (MUST be after all other specs are restored)
+                                    // Ensure categoryItems is loaded before restoring brand
+                                    if (!machine.categoryItems || !machine.categoryItems.brands) {
+                                        await this.loadCategoryItemsForMachine(machine.tempId, machine.machine_category_id);
+                                        await this.$nextTick();
+                                        await this.$nextTick();
+                                    }
+                                    
+                                    // Restore brand and model from saved data (use savedBrandId/savedModelId which are from machineData)
+                                    if (savedBrandId && savedBrandId !== '' && savedBrandId !== null && savedBrandId !== undefined && savedBrandId !== '0') {
+                                        // Set brand_id - must be String to match :value="String(brand.id)"
+                                        machine.brand_id = String(savedBrandId);
+                                        
+                                        // Force Alpine.js reactivity
+                                        await this.$nextTick();
+                                        await this.$nextTick();
+                                        
+                                        // Load machine models for this brand (required for model dropdown to show options)
+                                        await this.loadMachineModelsForPI(machine.tempId, savedBrandId);
+                                        
+                                        // Wait for models API response to complete - give it more time
+                                        await new Promise(resolve => setTimeout(resolve, 500));
+                                        await this.$nextTick();
+                                        await this.$nextTick();
+                                        await this.$nextTick();
+                                        
+                                        // Restore model AFTER models are loaded
+                                        if (savedModelId && savedModelId !== '' && savedModelId !== null && savedModelId !== undefined && savedModelId !== '0') {
+                                            // Set model_id - must be String to match :value="String(model.id)"
+                                            machine.machine_model_id = String(savedModelId);
+                                            
+                                            // Force multiple reactivity updates to ensure DOM updates
+                                            await this.$nextTick();
+                                            await this.$nextTick();
+                                            await this.$nextTick();
+                                            
+                                            // Additional wait to ensure DOM is fully updated
+                                            await new Promise(resolve => setTimeout(resolve, 200));
+                                        }
+                                    }
+                                    
+                                    // Recalculate totals for this machine
+                                    this.calculateMachineTotals(machine.tempId);
+                                    this.updateAvailableQuantity(machine.tempId);
+                                }
+                            }
+                            
+                            // Trigger final calculation after all machines are loaded
+                            await this.$nextTick();
+                            this.calculateFinalAmounts();
+                        } else {
+                            this.calculateFinalAmounts();
+                        }
+                    } else {
+                        this.calculateFinalAmounts();
                     }
                 },
 
@@ -1006,31 +1114,33 @@
                     // This is just a preview of what the PI number will be
                 },
 
-                async selectContract(contractId) {
+                async selectContract(contractId, skipReset = false) {
                     this.selectedContractId = contractId;
-                    this.selectedMachines = {};
-                    this.addedMachines = [];
-                    this.totalAmount = 0;
+                    
+                    if (!skipReset) {
+                        this.selectedMachines = {};
+                        this.addedMachines = [];
+                        this.totalAmount = 0;
+                    }
 
                     try {
-                        const response = await fetch(`/contracts/${contractId}/contract-details`);
+                        const response = await fetch(`/contracts/${contractId}/contract-details?exclude_pi_id={{ $proformaInvoice->id }}`);
                         const data = await response.json();
                         this.contractData = data;
                         
                         // Store used quantities by category from existing PIs
                         this.usedQuantitiesByCategory = data.usedQuantitiesByCategory || {};
 
-                        // Populate buyer details from contract
-                        if (data.contract) {
-                            this.buyerCompanyName = data.contract.company_name || '';
-                            this.pan = data.contract.pan || '';
-                            this.gst = data.contract.gst || '';
-                            this.phoneNumber = data.contract.phone_number || '';
-                            this.phoneNumber2 = data.contract.phone_number_2 || '';
-                            this.ifcCertificateNumber = '';
-                            // Populate addresses from contract contact_address
-                            this.billingAddress = data.contract.contact_address || '';
-                            this.shippingAddress = data.contract.contact_address || '';
+                        // Only populate buyer details from contract if not already set (editing)
+                        if (!skipReset && data.contract) {
+                            if (!this.buyerCompanyName) this.buyerCompanyName = data.contract.company_name || '';
+                            if (!this.pan) this.pan = data.contract.pan || '';
+                            if (!this.gst) this.gst = data.contract.gst || '';
+                            if (!this.phoneNumber) this.phoneNumber = data.contract.phone_number || '';
+                            if (!this.phoneNumber2) this.phoneNumber2 = data.contract.phone_number_2 || '';
+                            // Populate addresses from contract contact_address only if not set
+                            if (!this.billingAddress) this.billingAddress = data.contract.contact_address || '';
+                            if (!this.shippingAddress) this.shippingAddress = data.contract.contact_address || '';
                         }
                     } catch (error) {
                         console.error('Error loading contract details:', error);
@@ -1157,12 +1267,30 @@
                         if (machines && machines.length > 0) {
                             machine.availableMachines = machines.map(m => ({...m})); // Deep copy for reactivity
                             
-                            // Automatically select the first machine from this category
-                            const firstMachine = machines[0];
-                            if (firstMachine) {
-                                machine.contract_machine_id = String(firstMachine.id);
-                                // Automatically load all details from the contract machine
-                                await this.loadMachineDetails(tempId, firstMachine.id);
+                            // If machine already has a contract_machine_id (edit mode), try to preserve it
+                            // Otherwise, automatically select the first machine from this category
+                            if (machine.contract_machine_id) {
+                                // Check if the current contract_machine_id exists in the new category's machines
+                                const existingMachine = machines.find(m => String(m.id) === String(machine.contract_machine_id));
+                                if (!existingMachine) {
+                                    // Current contract machine not in new category, select first one
+                                    const firstMachine = machines[0];
+                                    if (firstMachine) {
+                                        machine.contract_machine_id = String(firstMachine.id);
+                                        // Automatically load all details from the contract machine
+                                        await this.loadMachineDetails(tempId, firstMachine.id);
+                                    }
+                                }
+                                // If existing machine is found, keep the current contract_machine_id
+                                // Don't reload details as they're already loaded
+                            } else {
+                                // No existing selection, automatically select the first machine
+                                const firstMachine = machines[0];
+                                if (firstMachine) {
+                                    machine.contract_machine_id = String(firstMachine.id);
+                                    // Automatically load all details from the contract machine
+                                    await this.loadMachineDetails(tempId, firstMachine.id);
+                                }
                             }
                         } else {
                             machine.availableMachines = [];
@@ -1206,8 +1334,17 @@
                     // Set contract machine ID
                     machine.contract_machine_id = String(contractMachine.id);
                     machine.contractAmount = parseFloat(contractMachine.amount) || 0; // Store original contract amount
-                    machine.amount = parseFloat(contractMachine.amount) || 0; // Set editable amount (can be changed)
-                    machine.amc_price = 0; // Initialize AMC price
+                    
+                    // Only set amount from contract if machine doesn't already have a saved amount (edit mode)
+                    // In edit mode, we want to preserve the user's custom PI amount
+                    // Check if amount is undefined/null, not just 0, because 0 might be a valid saved value
+                    if (machine.amount === undefined || machine.amount === null) {
+                        machine.amount = parseFloat(contractMachine.amount) || 0; // Set editable amount (can be changed)
+                    }
+                    // If machine already has amc_price set (edit mode), preserve it, otherwise initialize to 0
+                    if (machine.amc_price === undefined || machine.amc_price === null) {
+                        machine.amc_price = 0;
+                    }
                     
                     // Get contract quantity from category data (includes used quantities from existing PIs)
                     const categoryIdStr = String(machine.machine_category_id);
@@ -1222,16 +1359,29 @@
                     }
                     
                     machine.contractQuantityPerCategory = contractQty; // Store contract quantity for this category
-                    machine.quantity = 0; // Start with 0, user will select
+                    
+                    // Only reset quantity if it's not already set (preserve in edit mode)
+                    // Check if quantity is undefined/null, not just 0
+                    if (machine.quantity === undefined || machine.quantity === null) {
+                        machine.quantity = 0; // Start with 0, user will select
+                    }
                     
                     // Update available quantity based on other machines in same category and existing PIs
                     this.updateAvailableQuantity(machine.tempId);
-                    machine.overseas_freight = 0; // Initialize overseas freight
-                    machine.port_expenses_clearing = 0; // Initialize port expenses
-                    machine.gst_percentage = 18; // Initialize GST percentage
                     
-                    // Load category items for this machine's category FIRST
-                    if (machine.machine_category_id) {
+                    // Only initialize these if not already set (preserve in edit mode)
+                    if (machine.overseas_freight === undefined || machine.overseas_freight === null) {
+                        machine.overseas_freight = 0;
+                    }
+                    if (machine.port_expenses_clearing === undefined || machine.port_expenses_clearing === null) {
+                        machine.port_expenses_clearing = 0;
+                    }
+                    if (machine.gst_percentage === undefined || machine.gst_percentage === null || machine.gst_percentage === 0) {
+                        machine.gst_percentage = 18;
+                    }
+                    
+                    // Load category items for this machine's category FIRST (only if not already loaded)
+                    if (machine.machine_category_id && !machine.categoryItems) {
                         await this.loadCategoryItemsForMachine(tempId, machine.machine_category_id);
                         // Wait for Alpine.js to process the category items
                         await this.$nextTick();
@@ -1242,57 +1392,106 @@
                     const modelId = (contractMachine.machine_model_id != null && contractMachine.machine_model_id !== '') ? String(contractMachine.machine_model_id) : '';
                     
                     // Set brand_id FIRST (but NOT model_id yet)
-                    machine.brand_id = brandId;
-                    machine.machine_model_id = ''; // Clear model_id initially
+                    // IMPORTANT: In edit mode, DO NOT overwrite brand_id if it's already set from saved data
+                    // Only set from contract if brand_id is empty/undefined/null (create mode)
+                    if (machine.brand_id === undefined || machine.brand_id === null || machine.brand_id === '' || machine.brand_id === '0') {
+                        machine.brand_id = brandId;
+                    }
+                    // Only clear model_id if not already set (preserve edit mode values)
+                    if (machine.machine_model_id === undefined || machine.machine_model_id === null || machine.machine_model_id === '' || machine.machine_model_id === '0') {
+                        machine.machine_model_id = '';
+                    }
                     
-                    // Set all other specification values from contract
-                    machine.feeder_id = (contractMachine.feeder_id != null && contractMachine.feeder_id !== '') ? String(contractMachine.feeder_id) : '';
-                    machine.machine_hook_id = (contractMachine.machine_hook_id != null && contractMachine.machine_hook_id !== '') ? String(contractMachine.machine_hook_id) : '';
-                    machine.machine_e_read_id = (contractMachine.machine_e_read_id != null && contractMachine.machine_e_read_id !== '') ? String(contractMachine.machine_e_read_id) : '';
-                    machine.color_id = (contractMachine.color_id != null && contractMachine.color_id !== '') ? String(contractMachine.color_id) : '';
-                    machine.machine_nozzle_id = (contractMachine.machine_nozzle_id != null && contractMachine.machine_nozzle_id !== '') ? String(contractMachine.machine_nozzle_id) : '';
-                    machine.machine_dropin_id = (contractMachine.machine_dropin_id != null && contractMachine.machine_dropin_id !== '') ? String(contractMachine.machine_dropin_id) : '';
-                    machine.machine_beam_id = (contractMachine.machine_beam_id != null && contractMachine.machine_beam_id !== '') ? String(contractMachine.machine_beam_id) : '';
-                    machine.machine_cloth_roller_id = (contractMachine.machine_cloth_roller_id != null && contractMachine.machine_cloth_roller_id !== '') ? String(contractMachine.machine_cloth_roller_id) : '';
-                    machine.machine_software_id = (contractMachine.machine_software_id != null && contractMachine.machine_software_id !== '') ? String(contractMachine.machine_software_id) : '';
-                    machine.hsn_code_id = (contractMachine.hsn_code_id != null && contractMachine.hsn_code_id !== '') ? String(contractMachine.hsn_code_id) : '';
-                    machine.wir_id = (contractMachine.wir_id != null && contractMachine.wir_id !== '') ? String(contractMachine.wir_id) : '';
-                    machine.machine_shaft_id = (contractMachine.machine_shaft_id != null && contractMachine.machine_shaft_id !== '') ? String(contractMachine.machine_shaft_id) : '';
-                    machine.machine_lever_id = (contractMachine.machine_lever_id != null && contractMachine.machine_lever_id !== '') ? String(contractMachine.machine_lever_id) : '';
-                    machine.machine_chain_id = (contractMachine.machine_chain_id != null && contractMachine.machine_chain_id !== '') ? String(contractMachine.machine_chain_id) : '';
-                    machine.machine_heald_wire_id = (contractMachine.machine_heald_wire_id != null && contractMachine.machine_heald_wire_id !== '') ? String(contractMachine.machine_heald_wire_id) : '';
-                    machine.delivery_term_id = (contractMachine.delivery_term_id != null && contractMachine.delivery_term_id !== '') ? String(contractMachine.delivery_term_id) : '';
+                    // Set all other specification values from contract (only if not already set - preserve edit mode values)
+                    // Use number format for most fields to match option :value format
+                    if (machine.feeder_id === undefined || machine.feeder_id === null || machine.feeder_id === '') {
+                        machine.feeder_id = (contractMachine.feeder_id != null && contractMachine.feeder_id !== '') ? parseInt(contractMachine.feeder_id) || contractMachine.feeder_id : '';
+                    }
+                    if (machine.machine_hook_id === undefined || machine.machine_hook_id === null || machine.machine_hook_id === '') {
+                        machine.machine_hook_id = (contractMachine.machine_hook_id != null && contractMachine.machine_hook_id !== '') ? parseInt(contractMachine.machine_hook_id) || contractMachine.machine_hook_id : '';
+                    }
+                    if (machine.machine_e_read_id === undefined || machine.machine_e_read_id === null || machine.machine_e_read_id === '') {
+                        machine.machine_e_read_id = (contractMachine.machine_e_read_id != null && contractMachine.machine_e_read_id !== '') ? parseInt(contractMachine.machine_e_read_id) || contractMachine.machine_e_read_id : '';
+                    }
+                    if (machine.color_id === undefined || machine.color_id === null || machine.color_id === '') {
+                        machine.color_id = (contractMachine.color_id != null && contractMachine.color_id !== '') ? parseInt(contractMachine.color_id) || contractMachine.color_id : '';
+                    }
+                    if (machine.machine_nozzle_id === undefined || machine.machine_nozzle_id === null || machine.machine_nozzle_id === '') {
+                        machine.machine_nozzle_id = (contractMachine.machine_nozzle_id != null && contractMachine.machine_nozzle_id !== '') ? parseInt(contractMachine.machine_nozzle_id) || contractMachine.machine_nozzle_id : '';
+                    }
+                    if (machine.machine_dropin_id === undefined || machine.machine_dropin_id === null || machine.machine_dropin_id === '') {
+                        machine.machine_dropin_id = (contractMachine.machine_dropin_id != null && contractMachine.machine_dropin_id !== '') ? parseInt(contractMachine.machine_dropin_id) || contractMachine.machine_dropin_id : '';
+                    }
+                    if (machine.machine_beam_id === undefined || machine.machine_beam_id === null || machine.machine_beam_id === '') {
+                        machine.machine_beam_id = (contractMachine.machine_beam_id != null && contractMachine.machine_beam_id !== '') ? parseInt(contractMachine.machine_beam_id) || contractMachine.machine_beam_id : '';
+                    }
+                    if (machine.machine_cloth_roller_id === undefined || machine.machine_cloth_roller_id === null || machine.machine_cloth_roller_id === '') {
+                        machine.machine_cloth_roller_id = (contractMachine.machine_cloth_roller_id != null && contractMachine.machine_cloth_roller_id !== '') ? parseInt(contractMachine.machine_cloth_roller_id) || contractMachine.machine_cloth_roller_id : '';
+                    }
+                    if (machine.machine_software_id === undefined || machine.machine_software_id === null || machine.machine_software_id === '') {
+                        machine.machine_software_id = (contractMachine.machine_software_id != null && contractMachine.machine_software_id !== '') ? parseInt(contractMachine.machine_software_id) || contractMachine.machine_software_id : '';
+                    }
+                    if (machine.hsn_code_id === undefined || machine.hsn_code_id === null || machine.hsn_code_id === '') {
+                        machine.hsn_code_id = (contractMachine.hsn_code_id != null && contractMachine.hsn_code_id !== '') ? parseInt(contractMachine.hsn_code_id) || contractMachine.hsn_code_id : '';
+                    }
+                    if (machine.wir_id === undefined || machine.wir_id === null || machine.wir_id === '') {
+                        machine.wir_id = (contractMachine.wir_id != null && contractMachine.wir_id !== '') ? parseInt(contractMachine.wir_id) || contractMachine.wir_id : '';
+                    }
+                    if (machine.machine_shaft_id === undefined || machine.machine_shaft_id === null || machine.machine_shaft_id === '') {
+                        machine.machine_shaft_id = (contractMachine.machine_shaft_id != null && contractMachine.machine_shaft_id !== '') ? parseInt(contractMachine.machine_shaft_id) || contractMachine.machine_shaft_id : '';
+                    }
+                    if (machine.machine_lever_id === undefined || machine.machine_lever_id === null || machine.machine_lever_id === '') {
+                        machine.machine_lever_id = (contractMachine.machine_lever_id != null && contractMachine.machine_lever_id !== '') ? parseInt(contractMachine.machine_lever_id) || contractMachine.machine_lever_id : '';
+                    }
+                    if (machine.machine_chain_id === undefined || machine.machine_chain_id === null || machine.machine_chain_id === '') {
+                        machine.machine_chain_id = (contractMachine.machine_chain_id != null && contractMachine.machine_chain_id !== '') ? parseInt(contractMachine.machine_chain_id) || contractMachine.machine_chain_id : '';
+                    }
+                    if (machine.machine_heald_wire_id === undefined || machine.machine_heald_wire_id === null || machine.machine_heald_wire_id === '') {
+                        machine.machine_heald_wire_id = (contractMachine.machine_heald_wire_id != null && contractMachine.machine_heald_wire_id !== '') ? parseInt(contractMachine.machine_heald_wire_id) || contractMachine.machine_heald_wire_id : '';
+                    }
+                    if (machine.delivery_term_id === undefined || machine.delivery_term_id === null || machine.delivery_term_id === '') {
+                        machine.delivery_term_id = (contractMachine.delivery_term_id != null && contractMachine.delivery_term_id !== '') ? parseInt(contractMachine.delivery_term_id) || contractMachine.delivery_term_id : '';
+                    }
                     machine.description = contractMachine.description || '';
                     
                     // Wait for Alpine.js to process brand_id change
                     await this.$nextTick();
                     
                     // Load machine models if brand is selected
-                    if (brandId) {
-                        await this.loadMachineModelsForPI(tempId, brandId);
+                    // IMPORTANT: Only load models for contract brand if machine doesn't already have a saved brand
+                    // In edit mode, the saved brand will be restored later, so we don't want to load models for contract brand
+                    const currentBrandId = machine.brand_id && machine.brand_id !== '' && machine.brand_id !== '0' ? String(machine.brand_id) : null;
+                    const brandToUseForModels = currentBrandId || brandId;
+                    
+                    if (brandToUseForModels) {
+                        await this.loadMachineModelsForPI(tempId, brandToUseForModels);
                         // Wait for models to load and Alpine to update
                         await this.$nextTick();
                         await this.$nextTick(); // Extra tick to ensure DOM is updated
                         
-                        // AFTER models are loaded, set the model_id from contract
-                        if (modelId && machine.machineModels && machine.machineModels.length > 0) {
-                            // Check if the model from contract exists in the loaded models
-                            const modelExists = machine.machineModels.some(m => String(m.id) === String(modelId));
+                        // AFTER models are loaded, set the model_id from contract (only if machine doesn't already have a saved model)
+                        // In edit mode, saved model will be restored later
+                        const currentModelId = machine.machine_model_id && machine.machine_model_id !== '' && machine.machine_model_id !== '0' ? String(machine.machine_model_id) : null;
+                        const modelToSet = currentModelId || modelId;
+                        
+                        if (modelToSet && machine.machineModels && machine.machineModels.length > 0) {
+                            // Check if the model exists in the loaded models
+                            const modelExists = machine.machineModels.some(m => String(m.id) === String(modelToSet));
                             if (modelExists) {
                                 // Set the model_id - this should now work because models are loaded
-                                machine.machine_model_id = String(modelId);
+                                machine.machine_model_id = String(modelToSet);
                                 // Force another update to ensure reactivity
                                 await this.$nextTick();
-                                console.log('Model set from contract:', modelId, 'Available models:', machine.machineModels.map(m => ({id: m.id, model_no: m.model_no})));
+                                console.log('Model set from', currentModelId ? 'saved data' : 'contract', ':', modelToSet, 'Available models:', machine.machineModels.map(m => ({id: m.id, model_no: m.model_no})));
                             } else {
-                                console.warn('Model from contract not found in loaded models:', modelId, 'Available models:', machine.machineModels.map(m => ({id: m.id, model_no: m.model_no})));
+                                console.warn('Model not found in loaded models:', modelToSet, 'Available models:', machine.machineModels.map(m => ({id: m.id, model_no: m.model_no})));
                                 // Still try to set it in case it's a display issue
-                                machine.machine_model_id = String(modelId);
+                                machine.machine_model_id = String(modelToSet);
                             }
-                        } else if (modelId) {
+                        } else if (modelToSet) {
                             // If we have a modelId but no models loaded, still set it
-                            console.warn('No models loaded but contract has model_id:', modelId);
-                            machine.machine_model_id = String(modelId);
+                            console.warn('No models loaded but', currentModelId ? 'saved data' : 'contract', 'has model_id:', modelToSet);
+                            machine.machine_model_id = String(modelToSet);
                         }
                     }
                     

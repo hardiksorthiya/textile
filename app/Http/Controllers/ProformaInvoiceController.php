@@ -7,6 +7,8 @@ use App\Models\ProformaInvoiceMachine;
 use App\Models\Contract;
 use App\Models\ContractMachine;
 use App\Models\User;
+use App\Models\Seller;
+use App\Models\PILayout;
 use App\Models\Brand;
 use App\Models\MachineModel;
 use App\Models\Feeder;
@@ -85,6 +87,7 @@ class ProformaInvoiceController extends Controller
         $machineChains = MachineChain::orderBy('name')->get();
         $machineHealdWires = MachineHealdWire::orderBy('name')->get();
         $deliveryTerms = DeliveryTerm::orderBy('name')->get();
+        $sellers = Seller::orderBy('seller_name')->get();
         
         return view('proforma-invoices.create', compact(
             'contracts', 
@@ -107,7 +110,8 @@ class ProformaInvoiceController extends Controller
             'machineLevers',
             'machineChains',
             'machineHealdWires',
-            'deliveryTerms'
+            'deliveryTerms',
+            'sellers'
         ));
     }
     
@@ -118,6 +122,7 @@ class ProformaInvoiceController extends Controller
     {
         $request->validate([
             'contract_id' => 'required|exists:contracts,id',
+            'seller_id' => 'required|exists:sellers,id',
             'type_of_sale' => 'required|in:import,local,high_seas',
             'currency' => 'required|string|max:10',
             'usd_rate' => 'nullable|numeric|min:0',
@@ -169,8 +174,11 @@ class ProformaInvoiceController extends Controller
         
         DB::beginTransaction();
         try {
-            // Generate proforma invoice number
-            $proformaInvoiceNumber = $this->generateProformaInvoiceNumber();
+            // Get seller for PI number generation
+            $seller = Seller::findOrFail($request->seller_id);
+            
+            // Generate proforma invoice number based on seller
+            $proformaInvoiceNumber = $this->generateProformaInvoiceNumber($seller);
             
             // Calculate total amount and validate quantities
             $totalAmount = 0;
@@ -233,6 +241,7 @@ class ProformaInvoiceController extends Controller
             // Create proforma invoice
             $proformaInvoice = ProformaInvoice::create([
                 'contract_id' => $contract->id,
+                'seller_id' => $request->seller_id,
                 'proforma_invoice_number' => $proformaInvoiceNumber,
                 'created_by' => Auth::id(),
                 'total_amount' => $displayAmount,
@@ -308,6 +317,56 @@ class ProformaInvoiceController extends Controller
     }
     
     /**
+     * Display a listing of proforma invoices
+     */
+    public function index(Request $request)
+    {
+        $query = ProformaInvoice::with(['contract', 'seller', 'creator'])
+            ->orderBy('created_at', 'desc');
+        
+        // Search functionality - unified search field
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('proforma_invoice_number', 'like', '%' . $search . '%')
+                  ->orWhere('buyer_company_name', 'like', '%' . $search . '%')
+                  ->orWhereHas('contract', function($contractQuery) use ($search) {
+                      $contractQuery->where('contract_number', 'like', '%' . $search . '%')
+                                    ->orWhere('buyer_name', 'like', '%' . $search . '%')
+                                    ->orWhere('company_name', 'like', '%' . $search . '%');
+                  })
+                  ->orWhereHas('seller', function($sellerQuery) use ($search) {
+                      $sellerQuery->where('seller_name', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+        
+        // Legacy filter support (for backward compatibility)
+        if ($request->filled('pi_number')) {
+            $query->where('proforma_invoice_number', 'like', '%' . $request->pi_number . '%');
+        }
+        
+        if ($request->filled('contract_number')) {
+            $query->whereHas('contract', function($q) use ($request) {
+                $q->where('contract_number', 'like', '%' . $request->contract_number . '%');
+            });
+        }
+        
+        if ($request->filled('customer_name')) {
+            $query->where('buyer_company_name', 'like', '%' . $request->customer_name . '%');
+        }
+        
+        if ($request->filled('seller_id')) {
+            $query->where('seller_id', $request->seller_id);
+        }
+        
+        $proformaInvoices = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $sellers = \App\Models\Seller::orderBy('seller_name')->get();
+        
+        return view('proforma-invoices.index', compact('proformaInvoices', 'sellers'));
+    }
+    
+    /**
      * Display the specified proforma invoice
      */
     public function show(ProformaInvoice $proformaInvoice)
@@ -318,19 +377,263 @@ class ProformaInvoiceController extends Controller
             'contract.state',
             'contract.city',
             'contract.area',
+            'seller.piLayout',
             'proformaInvoiceMachines.contractMachine.machineCategory',
             'proformaInvoiceMachines.contractMachine.brand',
             'proformaInvoiceMachines.contractMachine.machineModel',
             'creator'
         ]);
         
-        return view('proforma-invoices.show', compact('proformaInvoice'));
+        // Get the layout to use (seller's layout or default)
+        $layout = $proformaInvoice->seller->piLayout ?? PILayout::where('is_default', true)->where('is_active', true)->first();
+        
+        return view('proforma-invoices.show', compact('proformaInvoice', 'layout'));
+    }
+    
+    /**
+     * Show the form for editing the specified proforma invoice
+     */
+    public function edit(ProformaInvoice $proformaInvoice)
+    {
+        // Load the same data as create method
+        $contract = $proformaInvoice->contract;
+        $selectedContractId = $contract->id;
+        
+        $contracts = Contract::with(['creator', 'contractMachines.machineCategory'])
+            ->where('id', $contract->id)
+            ->paginate(10);
+        
+        $salesManagers = User::whereHas('createdContracts')->orderBy('name')->get();
+        
+        // Get all options for machine specifications
+        $brands = Brand::orderBy('name')->get();
+        $machineModels = MachineModel::with('brand')->orderBy('model_no')->get();
+        $feeders = Feeder::with('feederBrand')->orderBy('feeder')->get();
+        $machineHooks = MachineHook::orderBy('hook')->get();
+        $machineEReads = MachineERead::orderBy('name')->get();
+        $colors = Color::orderBy('name')->get();
+        $machineNozzles = MachineNozzle::orderBy('nozzle')->get();
+        $machineDropins = MachineDropin::orderBy('name')->get();
+        $machineBeams = MachineBeam::orderBy('name')->get();
+        $machineClothRollers = MachineClothRoller::orderBy('name')->get();
+        $machineSoftwares = MachineSoftware::orderBy('name')->get();
+        $hsnCodes = HsnCode::orderBy('name')->get();
+        $wirs = Wir::orderBy('name')->get();
+        $machineShafts = MachineShaft::orderBy('name')->get();
+        $machineLevers = MachineLever::orderBy('name')->get();
+        $machineChains = MachineChain::orderBy('name')->get();
+        $machineHealdWires = MachineHealdWire::orderBy('name')->get();
+        $deliveryTerms = DeliveryTerm::orderBy('name')->get();
+        $sellers = Seller::orderBy('seller_name')->get();
+        
+        // Load proforma invoice with all relationships
+        $proformaInvoice->load([
+            'proformaInvoiceMachines.contractMachine.machineCategory',
+            'seller'
+        ]);
+        
+        return view('proforma-invoices.edit', compact(
+            'proformaInvoice',
+            'contracts',
+            'salesManagers',
+            'selectedContractId',
+            'brands',
+            'machineModels',
+            'feeders',
+            'machineHooks',
+            'machineEReads',
+            'colors',
+            'machineNozzles',
+            'machineDropins',
+            'machineBeams',
+            'machineClothRollers',
+            'machineSoftwares',
+            'hsnCodes',
+            'wirs',
+            'machineShafts',
+            'machineLevers',
+            'machineChains',
+            'machineHealdWires',
+            'deliveryTerms',
+            'sellers'
+        ));
+    }
+    
+    /**
+     * Update the specified proforma invoice
+     */
+    public function update(Request $request, ProformaInvoice $proformaInvoice)
+    {
+        // Similar validation as store method
+        $request->validate([
+            'seller_id' => 'required|exists:sellers,id',
+            'type_of_sale' => 'required|in:import,local,high_seas',
+            'currency' => 'required|string|max:10',
+            'usd_rate' => 'nullable|numeric|min:0',
+            'commission' => 'nullable|numeric|min:0|max:100',
+            'buyer_company_name' => 'required|string|max:255',
+            'pan' => 'nullable|string|max:255',
+            'gst' => 'nullable|string|max:255',
+            'phone_number' => 'required|string|max:255',
+            'phone_number_2' => 'nullable|string|max:255',
+            'ifc_certificate_number' => 'nullable|string|max:255',
+            'billing_address' => 'nullable|string',
+            'shipping_address' => 'nullable|string',
+            'machines' => 'required|array|min:1',
+            'machines.*.contract_machine_id' => 'required|exists:contract_machines,id',
+            'machines.*.machine_category_id' => 'required|exists:machine_categories,id',
+            'machines.*.quantity' => 'required|integer|min:1',
+            'machines.*.amount' => 'nullable|numeric|min:0',
+            'machines.*.amc_price' => 'nullable|numeric|min:0',
+            'overseas_freight' => 'nullable|numeric|min:0',
+            'port_expenses_clearing' => 'nullable|numeric|min:0',
+            'gst_percentage' => 'nullable|numeric|min:0|max:100',
+            'notes' => 'nullable|string',
+        ]);
+        
+        $contract = Contract::with('contractMachines')->findOrFail($proformaInvoice->contract_id);
+        
+        DB::beginTransaction();
+        try {
+            // Calculate totals (similar to store method)
+            $totalAmount = 0;
+            $contractAmountsInUSD = [];
+            
+            foreach ($request->machines as $machineData) {
+                $contractMachine = ContractMachine::findOrFail($machineData['contract_machine_id']);
+                
+                if ($machineData['quantity'] > $contractMachine->quantity) {
+                    $categoryName = $contractMachine->machineCategory->name ?? 'N/A';
+                    return back()->withErrors([
+                        'machines' => "Quantity for machine category '{$categoryName}' cannot exceed contract quantity of {$contractMachine->quantity}."
+                    ])->withInput();
+                }
+                
+                $unitAmount = isset($machineData['amount']) && $machineData['amount'] > 0 
+                    ? $machineData['amount'] 
+                    : $contractMachine->amount;
+                
+                $amcPrice = isset($machineData['amc_price']) ? floatval($machineData['amc_price']) : 0;
+                $piPricePlusAmc = $unitAmount + $amcPrice;
+                $machineTotalUSD = $machineData['quantity'] * $piPricePlusAmc;
+                $contractAmountsInUSD[] = $machineTotalUSD;
+            }
+            
+            $totalAmountUSD = array_sum($contractAmountsInUSD);
+            $overseasFreight = $request->overseas_freight ?? 0;
+            $portExpensesClearing = $request->port_expenses_clearing ?? 0;
+            $subtotal = $totalAmountUSD + $overseasFreight + $portExpensesClearing;
+            
+            $gstPercentage = $request->gst_percentage ?? 18;
+            $gstAmount = ($subtotal * $gstPercentage) / 100;
+            $finalAmountWithGST = $subtotal + $gstAmount;
+            
+            $displayAmount = $finalAmountWithGST;
+            if ($request->type_of_sale === 'local' && $request->usd_rate) {
+                $displayAmount = $finalAmountWithGST * $request->usd_rate;
+            }
+            
+            if ($request->type_of_sale === 'high_seas' && $request->commission) {
+                $commissionAmount = ($displayAmount * $request->commission) / 100;
+                $displayAmount = $displayAmount + $commissionAmount;
+            }
+            
+            // Update proforma invoice
+            $proformaInvoice->update([
+                'seller_id' => $request->seller_id,
+                'total_amount' => $displayAmount,
+                'type_of_sale' => $request->type_of_sale,
+                'currency' => $request->currency,
+                'usd_rate' => $request->usd_rate,
+                'commission' => $request->commission,
+                'buyer_company_name' => $request->buyer_company_name,
+                'pan' => $request->pan,
+                'gst' => $request->gst,
+                'phone_number' => $request->phone_number,
+                'phone_number_2' => $request->phone_number_2,
+                'ifc_certificate_number' => $request->ifc_certificate_number,
+                'billing_address' => $request->billing_address,
+                'shipping_address' => $request->shipping_address,
+                'overseas_freight' => $request->overseas_freight,
+                'port_expenses_clearing' => $request->port_expenses_clearing,
+                'gst_percentage' => $request->gst_percentage ?? 18,
+                'gst_amount' => $gstAmount,
+                'final_amount_with_gst' => $finalAmountWithGST,
+                'notes' => $request->notes,
+            ]);
+            
+            // Delete existing machines and create new ones
+            $proformaInvoice->proformaInvoiceMachines()->delete();
+            
+            foreach ($request->machines as $machineData) {
+                $contractMachine = ContractMachine::findOrFail($machineData['contract_machine_id']);
+                $unitAmount = $machineData['amount'] ?? $contractMachine->amount;
+                $amcPrice = $machineData['amc_price'] ?? 0;
+                $piPricePlusAmc = $unitAmount + $amcPrice;
+                $totalPiPrice = $piPricePlusAmc * $machineData['quantity'];
+                
+                ProformaInvoiceMachine::create([
+                    'proforma_invoice_id' => $proformaInvoice->id,
+                    'contract_machine_id' => $machineData['contract_machine_id'],
+                    'machine_category_id' => $machineData['machine_category_id'] ?? null,
+                    'brand_id' => $machineData['brand_id'] ?? null,
+                    'machine_model_id' => $machineData['machine_model_id'] ?? null,
+                    'quantity' => $machineData['quantity'],
+                    'amount' => $unitAmount,
+                    'amc_price' => $amcPrice,
+                    'pi_price_plus_amc' => $piPricePlusAmc,
+                    'total_pi_price' => $totalPiPrice,
+                    'description' => $machineData['description'] ?? null,
+                    'feeder_id' => $machineData['feeder_id'] ?? null,
+                    'machine_hook_id' => $machineData['machine_hook_id'] ?? null,
+                    'machine_e_read_id' => $machineData['machine_e_read_id'] ?? null,
+                    'color_id' => $machineData['color_id'] ?? null,
+                    'machine_nozzle_id' => $machineData['machine_nozzle_id'] ?? null,
+                    'machine_dropin_id' => $machineData['machine_dropin_id'] ?? null,
+                    'machine_beam_id' => $machineData['machine_beam_id'] ?? null,
+                    'machine_cloth_roller_id' => $machineData['machine_cloth_roller_id'] ?? null,
+                    'machine_software_id' => $machineData['machine_software_id'] ?? null,
+                    'hsn_code_id' => $machineData['hsn_code_id'] ?? null,
+                    'wir_id' => $machineData['wir_id'] ?? null,
+                    'machine_shaft_id' => $machineData['machine_shaft_id'] ?? null,
+                    'machine_lever_id' => $machineData['machine_lever_id'] ?? null,
+                    'machine_chain_id' => $machineData['machine_chain_id'] ?? null,
+                    'machine_heald_wire_id' => $machineData['machine_heald_wire_id'] ?? null,
+                    'delivery_term_id' => $machineData['delivery_term_id'] ?? null,
+                ]);
+            }
+            
+            DB::commit();
+            
+            return redirect()->route('proforma-invoices.show', $proformaInvoice)
+                ->with('success', 'Proforma invoice updated successfully.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to update proforma invoice: ' . $e->getMessage()])->withInput();
+        }
+    }
+    
+    /**
+     * Remove the specified proforma invoice
+     */
+    public function destroy(ProformaInvoice $proformaInvoice)
+    {
+        try {
+            $proformaInvoice->proformaInvoiceMachines()->delete();
+            $proformaInvoice->delete();
+            
+            return redirect()->route('proforma-invoices.index')
+                ->with('success', 'Proforma invoice deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to delete proforma invoice: ' . $e->getMessage()]);
+        }
     }
     
     /**
      * Get contract details for proforma invoice form
      */
-    public function getContractDetails(Contract $contract)
+    public function getContractDetails(Contract $contract, Request $request)
     {
         $contract->load([
             'contractMachines.machineCategory',
@@ -358,6 +661,28 @@ class ProformaInvoiceController extends Controller
         // Group machines by category
         $machinesByCategory = $contract->contractMachines->groupBy('machine_category_id');
         
+        // Calculate used quantities per category from existing PIs for this contract
+        // Exclude current PI if editing (passed as exclude_pi_id parameter)
+        $excludePIId = $request->get('exclude_pi_id');
+        $usedQuantitiesByCategory = [];
+        $existingPIsQuery = ProformaInvoice::where('contract_id', $contract->id);
+        
+        if ($excludePIId) {
+            $existingPIsQuery->where('id', '!=', $excludePIId);
+        }
+        
+        $existingPIs = $existingPIsQuery->with('proformaInvoiceMachines.contractMachine')->get();
+        
+        foreach ($existingPIs as $pi) {
+            foreach ($pi->proformaInvoiceMachines as $piMachine) {
+                $categoryId = $piMachine->contractMachine->machine_category_id;
+                if (!isset($usedQuantitiesByCategory[$categoryId])) {
+                    $usedQuantitiesByCategory[$categoryId] = 0;
+                }
+                $usedQuantitiesByCategory[$categoryId] += $piMachine->quantity;
+            }
+        }
+        
         return response()->json([
             'contract' => [
                 'id' => $contract->id,
@@ -372,11 +697,20 @@ class ProformaInvoiceController extends Controller
                 'total_amount' => $contract->total_amount,
                 'creator' => $contract->creator ? ['name' => $contract->creator->name] : null,
             ],
-            'machinesByCategory' => $machinesByCategory->map(function ($machines, $categoryId) {
+            'usedQuantitiesByCategory' => $usedQuantitiesByCategory,
+            'machinesByCategory' => $machinesByCategory->map(function ($machines, $categoryId) use ($usedQuantitiesByCategory) {
                 $firstMachine = $machines->first();
+                $categoryIdStr = (string)$categoryId;
+                $usedQty = $usedQuantitiesByCategory[$categoryIdStr] ?? 0;
+                $contractQty = $firstMachine->quantity ?? 0;
+                $availableQty = max(0, $contractQty - $usedQty);
+                
                 return [
-                    'category_id' => (string)$categoryId, // Ensure string type for consistent comparison
+                    'category_id' => $categoryIdStr, // Ensure string type for consistent comparison
                     'category_name' => $firstMachine->machineCategory->name ?? 'N/A',
+                    'contract_quantity' => $contractQty,
+                    'used_quantity' => $usedQty,
+                    'available_quantity' => $availableQty,
                     'machines' => $machines->map(function ($machine) {
                         return [
                             'id' => $machine->id,
@@ -429,22 +763,55 @@ class ProformaInvoiceController extends Controller
     }
     
     /**
-     * Generate unique proforma invoice number
+     * Generate unique proforma invoice number based on seller
+     * Format: PI_SHORT_NAME + ddmmyyyy or PI_SHORT_NAME + ddmmyyyy_A, _B, etc.
      */
-    private function generateProformaInvoiceNumber()
+    private function generateProformaInvoiceNumber(Seller $seller)
     {
-        $prefix = 'PI-' . date('Ymd');
-        $lastInvoice = ProformaInvoice::where('proforma_invoice_number', 'like', $prefix . '%')
-            ->orderBy('proforma_invoice_number', 'desc')
-            ->first();
+        $piShortName = $seller->pi_short_name;
+        $todayDate = date('dmY'); // ddmmyyyy format
+        $baseNumber = $piShortName . $todayDate;
         
-        if ($lastInvoice) {
-            $lastNumber = (int) substr($lastInvoice->proforma_invoice_number, -3);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
+        // Check for all existing invoices with this base number (with or without suffix) created today
+        $existingInvoices = ProformaInvoice::where(function($query) use ($baseNumber) {
+                $query->where('proforma_invoice_number', $baseNumber)
+                      ->orWhere('proforma_invoice_number', 'like', $baseNumber . '_%');
+            })
+            ->whereDate('created_at', today())
+            ->orderBy('proforma_invoice_number', 'desc')
+            ->get();
+        
+        if ($existingInvoices->isEmpty()) {
+            // No duplicate, return base number
+            return $baseNumber;
         }
         
-        return $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        // Check if base number exists (without suffix)
+        $baseExists = $existingInvoices->contains(function($invoice) use ($baseNumber) {
+            return $invoice->proforma_invoice_number === $baseNumber;
+        });
+        
+        // Get invoices with suffix only
+        $suffixedInvoices = $existingInvoices->filter(function($invoice) use ($baseNumber) {
+            return strpos($invoice->proforma_invoice_number, $baseNumber . '_') === 0;
+        });
+        
+        if ($suffixedInvoices->isEmpty()) {
+            // Base number exists but no suffixes yet, use _A
+            return $baseNumber . '_A';
+        }
+        
+        // Get the last suffix
+        $lastInvoice = $suffixedInvoices->first();
+        $lastSuffix = substr($lastInvoice->proforma_invoice_number, strlen($baseNumber) + 1);
+        
+        // Increment suffix (A -> B, B -> C, etc.)
+        if (strlen($lastSuffix) === 1 && ctype_alpha($lastSuffix)) {
+            $nextSuffix = chr(ord($lastSuffix) + 1);
+            return $baseNumber . '_' . $nextSuffix;
+        }
+        
+        // Fallback: if suffix is not a single letter, start with _A
+        return $baseNumber . '_A';
     }
 }
