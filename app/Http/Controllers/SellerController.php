@@ -20,8 +20,7 @@ class SellerController extends Controller
         $sellers = Seller::with(['country', 'machineCategories', 'bankDetails', 'piLayout'])->paginate(10);
         $categories = MachineCategory::orderBy('name')->get();
         $countries = Country::orderBy('name')->get();
-        $piLayouts = PILayout::where('is_active', true)->orderBy('is_default', 'desc')->orderBy('name')->get();
-        return view('sellers.index', compact('sellers', 'categories', 'countries', 'piLayouts'));
+        return view('sellers.index', compact('sellers', 'categories', 'countries'));
     }
 
     /**
@@ -62,7 +61,6 @@ class SellerController extends Controller
             'address' => $request->address,
             'pi_short_name' => $request->pi_short_name,
             'gst_no' => $request->gst_no,
-            'pi_layout_id' => $request->pi_layout_id,
             'signature' => $signaturePath,
         ]);
 
@@ -132,7 +130,6 @@ class SellerController extends Controller
             'address' => $request->address,
             'pi_short_name' => $request->pi_short_name,
             'gst_no' => $request->gst_no,
-            'pi_layout_id' => $request->pi_layout_id,
             'signature' => $signaturePath,
         ]);
 

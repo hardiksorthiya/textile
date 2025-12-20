@@ -225,26 +225,6 @@
                            </div>
 
                            <div class="mb-3">
-                               <label class="form-label fw-semibold" style="color: #374151;">PI Layout</label>
-                               <select name="pi_layout_id"
-                                      class="form-select @error('pi_layout_id') is-invalid @enderror"
-                                      style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                   <option value="">Select PI Layout (Optional)</option>
-                                   @forelse($piLayouts ?? [] as $layout)
-                                       <option value="{{ $layout->id }}" {{ old('pi_layout_id') == $layout->id ? 'selected' : '' }}>
-                                           {{ $layout->name }}@if($layout->is_default) (Default)@endif
-                                       </option>
-                                   @empty
-                                       <option value="" disabled>No layouts available. <a href="{{ route('pi-layouts.create') }}">Create one first</a>.</option>
-                                   @endforelse
-                               </select>
-                               <small class="text-muted">Select a custom layout for this seller's PIs. If not selected, default layout will be used.</small>
-                               @error('pi_layout_id')
-                                   <div class="invalid-feedback">{{ $message }}</div>
-                               @enderror
-                           </div>
-
-                           <div class="mb-3">
                                <label class="form-label fw-semibold" style="color: #374151;">Signature <small class="text-muted">(Image Upload)</small></label>
                                <input type="file" name="signature" accept="image/*"
                                       class="form-control @error('signature') is-invalid @enderror"
@@ -431,23 +411,6 @@
                                           style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                </div>
 
-                               <div class="mb-3">
-                                   <label class="form-label fw-semibold" style="color: #374151;">PI Layout</label>
-                                   <select name="pi_layout_id"
-                                          x-model="editingSeller.pi_layout_id"
-                                          class="form-select"
-                                          style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                       <option value="">Select PI Layout (Optional)</option>
-                                       @forelse($piLayouts ?? [] as $layout)
-                                           <option value="{{ $layout->id }}">
-                                               {{ $layout->name }}@if($layout->is_default) (Default)@endif
-                                           </option>
-                                       @empty
-                                           <option value="" disabled>No layouts available.</option>
-                                       @endforelse
-                                   </select>
-                                   <small class="text-muted">Select a custom layout for this seller's PIs. If not selected, default layout will be used.</small>
-                               </div>
 
                                <div class="mb-3">
                                    <label class="form-label fw-semibold" style="color: #374151;">Signature <small class="text-muted">(Image Upload)</small></label>
@@ -576,7 +539,6 @@
                                                             address: '{{ addslashes($seller->address) }}',
                                                             pi_short_name: '{{ addslashes($seller->pi_short_name) }}',
                                                             gst_no: '{{ addslashes($seller->gst_no ?? '') }}',
-                                                            pi_layout_id: {{ $seller->pi_layout_id ?? 'null' }},
                                                             signature: '{{ addslashes($seller->signature ?? '') }}',
                                                             categories: @js($seller->machineCategories),
                                                             bank_details: @js($seller->bankDetails)

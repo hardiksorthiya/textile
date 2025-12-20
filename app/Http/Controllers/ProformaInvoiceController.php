@@ -30,6 +30,7 @@ use App\Models\DeliveryTerm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf as DomPDF;
 
 class ProformaInvoiceController extends Controller
 {
@@ -307,7 +308,7 @@ class ProformaInvoiceController extends Controller
             
             DB::commit();
             
-            return redirect()->route('proforma-invoices.show', $proformaInvoice)
+            return redirect()->route('proforma-invoices.index')
                 ->with('success', 'Proforma invoice created successfully.');
                 
         } catch (\Exception $e) {
@@ -323,8 +324,33 @@ class ProformaInvoiceController extends Controller
     {
         $query = ProformaInvoice::with(['contract', 'seller', 'creator'])
             ->orderBy('created_at', 'desc');
-        
-        // Search functionality - unified search field
+
+        // Filter by Sales Manager (contract creator)
+        if ($request->filled('sales_manager')) {
+            $query->whereHas('contract', function($q) use ($request) {
+                $q->where('created_by', $request->sales_manager);
+            });
+        }
+
+        // Filter by Contract Number
+        if ($request->filled('contract_number')) {
+            $query->whereHas('contract', function($q) use ($request) {
+                $q->where('contract_number', 'like', '%' . $request->contract_number . '%');
+            });
+        }
+
+        // Filter by Customer Name (buyer_name or company_name from contract, or buyer_company_name from PI)
+        if ($request->filled('customer_name')) {
+            $query->where(function($q) use ($request) {
+                $q->where('buyer_company_name', 'like', '%' . $request->customer_name . '%')
+                  ->orWhereHas('contract', function($contractQuery) use ($request) {
+                      $contractQuery->where('buyer_name', 'like', '%' . $request->customer_name . '%')
+                                    ->orWhere('company_name', 'like', '%' . $request->customer_name . '%');
+                  });
+            });
+        }
+
+        // Legacy search support (for backward compatibility)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -340,30 +366,27 @@ class ProformaInvoiceController extends Controller
                   });
             });
         }
-        
+
         // Legacy filter support (for backward compatibility)
         if ($request->filled('pi_number')) {
             $query->where('proforma_invoice_number', 'like', '%' . $request->pi_number . '%');
         }
-        
-        if ($request->filled('contract_number')) {
-            $query->whereHas('contract', function($q) use ($request) {
-                $q->where('contract_number', 'like', '%' . $request->contract_number . '%');
-            });
-        }
-        
-        if ($request->filled('customer_name')) {
-            $query->where('buyer_company_name', 'like', '%' . $request->customer_name . '%');
-        }
-        
+
         if ($request->filled('seller_id')) {
             $query->where('seller_id', $request->seller_id);
         }
-        
+
+        // Get sales managers (users who created contracts)
+        $salesManagers = User::whereIn('id', function($query) {
+            $query->select('created_by')
+                ->from('contracts')
+                ->distinct();
+        })->select('id', 'name')->orderBy('name')->get();
+
         $proformaInvoices = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         $sellers = \App\Models\Seller::orderBy('seller_name')->get();
-        
-        return view('proforma-invoices.index', compact('proformaInvoices', 'sellers'));
+
+        return view('proforma-invoices.index', compact('proformaInvoices', 'sellers', 'salesManagers'));
     }
     
     /**
@@ -605,7 +628,7 @@ class ProformaInvoiceController extends Controller
             
             DB::commit();
             
-            return redirect()->route('proforma-invoices.show', $proformaInvoice)
+            return redirect()->route('proforma-invoices.index')
                 ->with('success', 'Proforma invoice updated successfully.');
                 
         } catch (\Exception $e) {
@@ -628,6 +651,54 @@ class ProformaInvoiceController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Failed to delete proforma invoice: ' . $e->getMessage()]);
         }
+    }
+    
+    /**
+     * Download proforma invoice as PDF.
+     */
+    public function downloadPdf(ProformaInvoice $proformaInvoice)
+    {
+        $proformaInvoice->load([
+            'contract.creator',
+            'contract.businessFirm',
+            'contract.state',
+            'contract.city',
+            'contract.area',
+            'seller.piLayout',
+            'seller.bankDetails',
+            'proformaInvoiceMachines.contractMachine.machineCategory',
+            'proformaInvoiceMachines.contractMachine.brand',
+            'proformaInvoiceMachines.contractMachine.machineModel',
+            'proformaInvoiceMachines.contractMachine.feeder.feederBrand',
+            'proformaInvoiceMachines.contractMachine.machineHook',
+            'proformaInvoiceMachines.contractMachine.machineERead',
+            'proformaInvoiceMachines.contractMachine.color',
+            'proformaInvoiceMachines.contractMachine.machineNozzle',
+            'proformaInvoiceMachines.contractMachine.machineDropin',
+            'proformaInvoiceMachines.contractMachine.machineBeam',
+            'proformaInvoiceMachines.contractMachine.machineClothRoller',
+            'proformaInvoiceMachines.contractMachine.machineSoftware',
+            'proformaInvoiceMachines.contractMachine.hsnCode',
+            'proformaInvoiceMachines.contractMachine.wir',
+            'proformaInvoiceMachines.contractMachine.machineShaft',
+            'proformaInvoiceMachines.contractMachine.machineLever',
+            'proformaInvoiceMachines.contractMachine.machineChain',
+            'proformaInvoiceMachines.contractMachine.machineHealdWire',
+            'proformaInvoiceMachines.contractMachine.deliveryTerm',
+            'creator'
+        ]);
+        
+        // Get the layout to use (seller's layout or default)
+        $layout = $proformaInvoice->seller->piLayout ?? PILayout::where('is_default', true)->where('is_active', true)->first();
+        
+        $pdf = DomPDF::loadView('proforma-invoices.pdf', compact('proformaInvoice', 'layout'));
+        
+        // Set options to enable font subsetting and Unicode support
+        $pdf->setOption('enable-font-subsetting', true);
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', true);
+        
+        return $pdf->download('proforma-invoice-' . $proformaInvoice->proforma_invoice_number . '.pdf');
     }
     
     /**

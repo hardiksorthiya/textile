@@ -22,7 +22,8 @@ class PILayoutController extends Controller
     public function create()
     {
         $defaultTemplate = $this->getDefaultTemplate();
-        return view('pi-layouts.create', compact('defaultTemplate'));
+        $sellers = \App\Models\Seller::orderBy('seller_name')->get();
+        return view('pi-layouts.create', compact('defaultTemplate', 'sellers'));
     }
 
     /**
@@ -36,6 +37,8 @@ class PILayoutController extends Controller
             'template_html' => 'required|string',
             'is_active' => 'boolean',
             'is_default' => 'boolean',
+            'sellers' => 'nullable|array',
+            'sellers.*' => 'exists:sellers,id',
         ]);
 
         // If this is set as default, unset other defaults
@@ -43,13 +46,18 @@ class PILayoutController extends Controller
             PILayout::where('is_default', true)->update(['is_default' => false]);
         }
 
-        PILayout::create([
+        $layout = PILayout::create([
             'name' => $request->name,
             'description' => $request->description,
             'template_html' => $request->template_html,
             'is_active' => $request->has('is_active'),
             'is_default' => $request->has('is_default'),
         ]);
+
+        // Assign layout to selected sellers
+        if ($request->has('sellers') && is_array($request->sellers)) {
+            \App\Models\Seller::whereIn('id', $request->sellers)->update(['pi_layout_id' => $layout->id]);
+        }
 
         return redirect()->route('pi-layouts.index')
             ->with('success', 'PI Layout created successfully.');
@@ -68,7 +76,9 @@ class PILayoutController extends Controller
      */
     public function edit(PILayout $piLayout)
     {
-        return view('pi-layouts.edit', compact('piLayout'));
+        $sellers = \App\Models\Seller::orderBy('seller_name')->get();
+        $selectedSellerIds = $piLayout->sellers()->pluck('sellers.id')->toArray();
+        return view('pi-layouts.edit', compact('piLayout', 'sellers', 'selectedSellerIds'));
     }
 
     /**
@@ -82,6 +92,8 @@ class PILayoutController extends Controller
             'template_html' => 'required|string',
             'is_active' => 'boolean',
             'is_default' => 'boolean',
+            'sellers' => 'nullable|array',
+            'sellers.*' => 'exists:sellers,id',
         ]);
 
         // If this is set as default, unset other defaults
@@ -96,6 +108,14 @@ class PILayoutController extends Controller
             'is_active' => $request->has('is_active'),
             'is_default' => $request->has('is_default'),
         ]);
+
+        // Remove layout from all sellers first
+        \App\Models\Seller::where('pi_layout_id', $piLayout->id)->update(['pi_layout_id' => null]);
+
+        // Assign layout to selected sellers
+        if ($request->has('sellers') && is_array($request->sellers)) {
+            \App\Models\Seller::whereIn('id', $request->sellers)->update(['pi_layout_id' => $piLayout->id]);
+        }
 
         return redirect()->route('pi-layouts.index')
             ->with('success', 'PI Layout updated successfully.');

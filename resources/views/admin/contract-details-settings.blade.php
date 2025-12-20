@@ -1,12 +1,7 @@
 <x-app-layout>
-    <div class="mb-4 d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Global Contract Details Settings</h1>
-            <p class="text-muted mb-0">Set default values for all contracts. These values will be used when creating new contracts.</p>
-        </div>
-        <a href="{{ route('settings.edit') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Back to Settings
-        </a>
+    <div class="mb-4">
+        <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Global Contract Details Settings</h1>
+        <p class="text-muted mb-0">Set default values for all contracts. These values will be used when creating new contracts.</p>
     </div>
 
     <div class="row g-4">

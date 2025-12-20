@@ -10,7 +10,19 @@
     </div>
 
     <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
-        <div class="card-body p-4">
+        <div class="card-body p-4"
+             x-data="{
+                 selectedSellers: {{ json_encode(old('sellers', $selectedSellerIds ?? [])) }},
+                 sellerDropdownOpen: false,
+                 toggleSeller(id) {
+                     id = String(id);
+                     const index = this.selectedSellers.indexOf(id);
+                     index > -1 ? this.selectedSellers.splice(index, 1) : this.selectedSellers.push(id);
+                 },
+                 isSellerSelected(id) {
+                     return this.selectedSellers.includes(String(id));
+                 }
+             }">
             <form action="{{ route('pi-layouts.update', $piLayout) }}" method="POST">
                 @csrf
                 @method('PUT')
@@ -47,6 +59,55 @@
                             </label>
                         </div>
                     </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold" style="color: #374151;">Sellers <small class="text-muted">(Multiple Select)</small></label>
+                    <div class="position-relative" @click.away="sellerDropdownOpen = false">
+                        <button type="button" 
+                                @click="sellerDropdownOpen = !sellerDropdownOpen"
+                                class="form-control text-start d-flex justify-content-between align-items-center"
+                                style="border-radius: 8px; border: 1px solid #e5e7eb; background: white; min-height: 38px;">
+                            <span x-text="selectedSellers.length > 0 ? selectedSellers.length + ' seller(s) selected' : 'Select Sellers'"></span>
+                            <i class="fas fa-chevron-down" :class="{ 'rotate-180': sellerDropdownOpen }"></i>
+                        </button>
+                        <div x-show="sellerDropdownOpen" 
+                             x-cloak
+                             class="position-absolute w-100 bg-white border rounded shadow-lg mt-1"
+                             style="z-index: 1000; max-height: 200px; overflow-y: auto; border-color: #e5e7eb !important;"
+                             @click.stop>
+                            @forelse($sellers ?? [] as $seller)
+                                <div class="d-flex align-items-center py-2 px-3" 
+                                     x-data="{ hovered: false }"
+                                     :class="isSellerSelected({{ $seller->id }}) ? 'bg-red-50' : ''"
+                                     :style="isSellerSelected({{ $seller->id }}) || hovered ? 'background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff);' : 'background-color: white;'"
+                                     style="cursor: pointer; transition: background 0.2s; border-radius: 4px; margin: 2px;" 
+                                     @mouseenter="hovered = true"
+                                     @mouseleave="hovered = false"
+                                     @click="toggleSeller({{ $seller->id }})">
+                                    <input class="form-check-input me-3" 
+                                           type="checkbox" 
+                                           :checked="isSellerSelected({{ $seller->id }})"
+                                           style="cursor: pointer; margin-top: 0; flex-shrink: 0;"
+                                           @click.stop="toggleSeller({{ $seller->id }})">
+                                    <label class="flex-grow-1 mb-0" style="cursor: pointer; margin: 0;">
+                                        {{ $seller->seller_name }} ({{ $seller->pi_short_name }})
+                                    </label>
+                                    <i class="fas fa-check text-primary ms-2" x-show="isSellerSelected({{ $seller->id }})" style="font-size: 0.875rem;"></i>
+                                </div>
+                            @empty
+                                <div class="p-3 text-center text-muted">
+                                    <small>No sellers available. Create sellers first.</small>
+                                </div>
+                            @endforelse
+                        </div>
+                        <template x-for="sellerId in selectedSellers" :key="sellerId">
+                            <input type="hidden" name="sellers[]" :value="sellerId">
+                        </template>
+                    </div>
+                    @error('sellers')
+                        <div class="text-danger small mt-1">{{ $message }}</div>
+                    @enderror
                 </div>
 
                 <div class="mb-4">

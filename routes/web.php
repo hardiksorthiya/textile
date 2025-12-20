@@ -38,6 +38,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ProformaInvoiceController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -207,6 +208,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/contract-details-settings', [SettingController::class, 'updateContractDetails'])
             ->name('settings.update-contract-details')
             ->middleware('permission:edit settings');
+        Route::get('/admin/pi-layouts-settings', [SettingController::class, 'piLayouts'])
+            ->name('settings.pi-layouts')
+            ->middleware('permission:view settings');
     });
     
     // Lead Management Routes - Permission based
@@ -248,6 +252,7 @@ Route::middleware('auth')->group(function () {
     // Users with "convert contract" or "view contract approvals" can view contracts
     Route::middleware(['permission:view contract approvals|convert contract'])->group(function () {
         Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::get('/contracts/over-invoice', [ContractController::class, 'overInvoice'])->name('contracts.over-invoice');
         Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show');
         Route::get('/contracts/{contract}/download-pdf', [ContractController::class, 'downloadPdf'])->name('contracts.download-pdf');
     });
@@ -273,6 +278,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['permission:view proforma invoices'])->group(function () {
         Route::get('/proforma-invoices', [ProformaInvoiceController::class, 'index'])->name('proforma-invoices.index');
         Route::get('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'show'])->name('proforma-invoices.show');
+        Route::get('/proforma-invoices/{proformaInvoice}/download-pdf', [ProformaInvoiceController::class, 'downloadPdf'])->name('proforma-invoices.download-pdf');
     });
     
     Route::middleware(['permission:create proforma invoices'])->group(function () {
@@ -287,6 +293,16 @@ Route::middleware('auth')->group(function () {
     
     Route::middleware(['permission:delete proforma invoices'])->group(function () {
         Route::delete('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'destroy'])->name('proforma-invoices.destroy');
+    });
+    
+    // Payment Routes
+    Route::middleware(['permission:view proforma invoices|view contract approvals'])->group(function () {
+        Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::get('/payments/collect-payment', [PaymentController::class, 'collectPayment'])->name('payments.collect-payment');
+        Route::get('/payments/return-payment', [PaymentController::class, 'returnPayment'])->name('payments.return-payment');
+        Route::get('/payments/get-contracts', [PaymentController::class, 'getContractsBySalesManager'])->name('payments.get-contracts');
+        Route::get('/payments/get-proforma-invoices', [PaymentController::class, 'getProformaInvoicesBySalesManager'])->name('payments.get-proforma-invoices');
+        Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
     });
     
     // Lead helper routes (available to anyone with view leads permission)

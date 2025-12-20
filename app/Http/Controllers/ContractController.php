@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contract;
 use App\Models\ContractMachine;
+use App\Models\ProformaInvoice;
 use App\Models\User;
 use App\Models\MachineCategory;
 use App\Models\Brand;
@@ -14,6 +15,7 @@ use App\Models\Area;
 use App\Models\DeliveryTerm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf as DomPDF;
 
 class ContractController extends Controller
@@ -569,5 +571,61 @@ class ContractController extends Controller
         $pdf->setOption('isRemoteEnabled', true);
         
         return $pdf->download('contract-' . $contract->contract_number . '.pdf');
+    }
+
+    /**
+     * Display over invoice list - contracts where total PI amount exceeds contract amount
+     */
+    public function overInvoice(Request $request)
+    {
+        // Get contracts with their total proforma invoice amounts
+        $query = Contract::with(['creator', 'businessFirm'])
+            ->select('contracts.*')
+            ->selectRaw('(SELECT COALESCE(SUM(total_amount), 0) FROM proforma_invoices WHERE proforma_invoices.contract_id = contracts.id) as total_pi_amount')
+            ->whereRaw('(SELECT COALESCE(SUM(total_amount), 0) FROM proforma_invoices WHERE proforma_invoices.contract_id = contracts.id) > contracts.total_amount');
+
+        // If user is not Admin or Super Admin, filter by their contracts
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $teamMemberIds = User::where('created_by', auth()->id())->pluck('id')->toArray();
+            $query->where(function($q) use ($teamMemberIds) {
+                $q->where('contracts.created_by', auth()->id())
+                  ->orWhereIn('contracts.created_by', $teamMemberIds);
+            });
+        }
+
+        // Filter by Sales Manager
+        if ($request->filled('sales_manager')) {
+            $query->where('contracts.created_by', $request->sales_manager);
+        }
+
+        // Filter by Contract Number
+        if ($request->filled('contract_number')) {
+            $query->where('contracts.contract_number', 'like', "%{$request->contract_number}%");
+        }
+
+        // Filter by Customer Name (buyer_name or company_name)
+        if ($request->filled('customer_name')) {
+            $query->where(function($q) use ($request) {
+                $q->where('contracts.buyer_name', 'like', "%{$request->customer_name}%")
+                  ->orWhere('contracts.company_name', 'like', "%{$request->customer_name}%");
+            });
+        }
+
+        // Get sales managers (users who created contracts)
+        $salesManagers = User::whereIn('id', function($query) {
+            $query->select('created_by')
+                ->from('contracts')
+                ->distinct();
+        })->select('id', 'name')->orderBy('name')->get();
+
+        $overInvoices = $query->orderBy('contracts.created_at', 'desc')->paginate(15)->withQueryString();
+
+        // Calculate difference for each contract
+        $overInvoices->getCollection()->transform(function ($contract) {
+            $contract->difference_amount = ($contract->total_pi_amount ?? 0) - ($contract->total_amount ?? 0);
+            return $contract;
+        });
+
+        return view('contracts.over-invoice', compact('overInvoices', 'salesManagers'));
     }
 }

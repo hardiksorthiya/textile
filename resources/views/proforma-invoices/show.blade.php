@@ -5,6 +5,11 @@
             <p class="text-muted mb-0">Proforma Invoice: {{ $proformaInvoice->proforma_invoice_number }}</p>
         </div>
         <div class="d-flex gap-2">
+            @can('view proforma invoices')
+            <a href="{{ route('proforma-invoices.download-pdf', $proformaInvoice) }}" class="btn btn-success" target="_blank">
+                <i class="fas fa-file-pdf me-2"></i>Download PDF
+            </a>
+            @endcan
             @can('edit proforma invoices')
             <a href="{{ route('proforma-invoices.edit', $proformaInvoice) }}" class="btn btn-warning">
                 <i class="fas fa-edit me-2"></i>Edit

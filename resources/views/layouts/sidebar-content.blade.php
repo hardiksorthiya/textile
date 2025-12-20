@@ -46,8 +46,8 @@
     @endcanany
 
     @hasrole('Admin|Super Admin')
-    <div x-data="{ open: {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') || request()->routeIs('pi-layouts.*') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') || request()->routeIs('pi-layouts.*') ? 'sidebar-active' : '' }}">
+    <div x-data="{ open: {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'true' : 'false' }} }" class="space-y-2">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
                 <i class="fas fa-industry w-5 mr-3"></i>
                 <span class="fw-semibold">Machine</span>
@@ -151,10 +151,6 @@
                 <i class="fas fa-cog w-4 mr-2"></i>
                 <span>Other Contract Details</span>
             </a>
-            <a href="{{ route('pi-layouts.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('pi-layouts.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-file-invoice w-4 mr-2"></i>
-                <span>PI Layouts</span>
-            </a>
         </div>
     </div>
     @endhasrole
@@ -208,9 +204,9 @@
     </a>
     @endcanany
 
-    @canany(['view proforma invoices', 'create proforma invoices', 'edit proforma invoices', 'delete proforma invoices'])
-    <div x-data="{ open: {{ request()->routeIs('proforma-invoices.*') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.*') ? 'sidebar-active' : '' }}">
+    @canany(['view proforma invoices', 'create proforma invoices', 'edit proforma invoices', 'delete proforma invoices', 'view contract approvals', 'convert contract'])
+    <div x-data="{ open: {{ request()->routeIs('proforma-invoices.*') || request()->routeIs('contracts.over-invoice') ? 'true' : 'false' }} }" class="space-y-2">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.*') || request()->routeIs('contracts.over-invoice') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
                 <i class="fas fa-shopping-cart w-5 mr-3"></i>
                 <span>Sale</span>
@@ -230,6 +226,12 @@
                 <span>PI List</span>
             </a>
             @endcan
+            @canany(['view contract approvals', 'convert contract'])
+            <a href="{{ route('contracts.over-invoice') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.over-invoice') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-exclamation-triangle w-4 mr-2"></i>
+                <span>Over Invoice</span>
+            </a>
+            @endcanany
         </div>
     </div>
     @endcanany
@@ -240,6 +242,13 @@
         <span>Customers</span>
     </a>
     @endcan
+
+    @canany(['view proforma invoices', 'view contract approvals'])
+    <a href="{{ route('payments.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('payments.*') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-money-bill-wave w-5 mr-3"></i>
+        <span>Payment</span>
+    </a>
+    @endcanany
 
     @can('view reports')
     <a href="{{ route('reports.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('reports.*') ? 'sidebar-active' : '' }}">
@@ -262,8 +271,8 @@
     @endcan
 
     @canany(['view settings', 'edit settings'])
-    <div x-data="{ open: {{ request()->routeIs('settings.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') ? 'sidebar-active' : '' }}">
+    <div x-data="{ open: {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') ? 'true' : 'false' }} }" class="space-y-2">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
                 <i class="fas fa-cog w-5 mr-3"></i>
                 <span>Settings</span>
@@ -271,9 +280,13 @@
             <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
         </button>
         <div x-show="open" x-collapse class="ml-8 space-y-1">
-            <a href="{{ route('settings.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('settings.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.edit') || (request()->routeIs('settings.update') && !request()->routeIs('settings.pi-layouts')) ? 'sidebar-active' : '' }}">
                 <i class="fas fa-cog w-4 mr-2"></i>
-                <span>Admin Settings</span>
+                <span>General Settings</span>
+            </a>
+            <a href="{{ route('settings.pi-layouts') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-file-invoice w-4 mr-2"></i>
+                <span>Layout of Proforma</span>
             </a>
             <a href="{{ route('business-firms.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('business-firms.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-briefcase w-4 mr-2"></i>

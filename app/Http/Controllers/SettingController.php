@@ -152,4 +152,13 @@ class SettingController extends Controller
 
         return redirect()->route('settings.contract-details')->with('success', 'Global contract details updated successfully.');
     }
+
+    /**
+     * Show the PI Layouts settings page.
+     */
+    public function piLayouts()
+    {
+        $layouts = \App\Models\PILayout::withCount('sellers')->orderBy('is_default', 'desc')->orderBy('name')->get();
+        return view('admin.pi-layouts-settings', compact('layouts'));
+    }
 }

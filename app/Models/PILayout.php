@@ -23,6 +23,6 @@ class PILayout extends Model
 
     public function sellers()
     {
-        return $this->hasMany(Seller::class);
+        return $this->hasMany(Seller::class, 'pi_layout_id');
     }
 }
