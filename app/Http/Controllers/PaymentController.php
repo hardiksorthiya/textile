@@ -6,8 +6,13 @@ use App\Models\Payment;
 use App\Models\Contract;
 use App\Models\ProformaInvoice;
 use App\Models\User;
+use App\Models\Country;
+use App\Models\Seller;
+use App\Models\SellerBankDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf as DomPDF;
 
 class PaymentController extends Controller
 {
@@ -85,15 +90,18 @@ class PaymentController extends Controller
                 ->distinct();
         })->select('id', 'name')->orderBy('name')->get();
 
+        // Get countries for Payee dropdown
+        $countries = Country::orderBy('name')->get();
+
         // If contract_id or proforma_invoice_id is provided, show payment form
         if ($request->filled('contract_id')) {
             $contract = Contract::with(['creator'])->findOrFail($request->contract_id);
-            return view('payments.collect-payment', compact('salesManagers', 'contract'));
+            return view('payments.collect-payment', compact('salesManagers', 'contract', 'countries'));
         }
 
         if ($request->filled('proforma_invoice_id')) {
             $proformaInvoice = ProformaInvoice::with(['contract.creator', 'seller'])->findOrFail($request->proforma_invoice_id);
-            return view('payments.collect-payment', compact('salesManagers', 'proformaInvoice'));
+            return view('payments.collect-payment', compact('salesManagers', 'proformaInvoice', 'countries'));
         }
 
         // Get contracts filtered by sales manager
@@ -118,7 +126,7 @@ class PaymentController extends Controller
                 ->get();
         }
 
-        return view('payments.collect-payment', compact('salesManagers', 'contracts', 'proformaInvoices'));
+        return view('payments.collect-payment', compact('salesManagers', 'contracts', 'proformaInvoices', 'countries'));
     }
 
     /**
@@ -194,15 +202,18 @@ class PaymentController extends Controller
                 ->distinct();
         })->select('id', 'name')->orderBy('name')->get();
 
+        // Get countries for Payee dropdown
+        $countries = Country::orderBy('name')->get();
+
         // If contract_id or proforma_invoice_id is provided, show payment form
         if ($request->filled('contract_id')) {
             $contract = Contract::with(['creator'])->findOrFail($request->contract_id);
-            return view('payments.return-payment', compact('salesManagers', 'contract'));
+            return view('payments.return-payment', compact('salesManagers', 'contract', 'countries'));
         }
 
         if ($request->filled('proforma_invoice_id')) {
             $proformaInvoice = ProformaInvoice::with(['contract.creator', 'seller'])->findOrFail($request->proforma_invoice_id);
-            return view('payments.return-payment', compact('salesManagers', 'proformaInvoice'));
+            return view('payments.return-payment', compact('salesManagers', 'proformaInvoice', 'countries'));
         }
 
         // Get contracts filtered by sales manager
@@ -227,7 +238,10 @@ class PaymentController extends Controller
                 ->get();
         }
 
-        return view('payments.return-payment', compact('salesManagers', 'contracts', 'proformaInvoices'));
+        // Get countries for Payee dropdown
+        $countries = Country::orderBy('name')->get();
+
+        return view('payments.return-payment', compact('salesManagers', 'contracts', 'proformaInvoices', 'countries'));
     }
 
     /**
@@ -242,11 +256,22 @@ class PaymentController extends Controller
             'amount' => 'required|numeric|min:0',
             'payment_date' => 'required|date',
             'payment_method' => 'nullable|string|max:255',
-            'reference_number' => 'nullable|string|max:255',
+            'payment_by' => 'nullable|string|max:255',
+            'payee_country_id' => 'nullable|exists:countries,id',
+            'payment_to_seller_id' => 'nullable|exists:sellers,id',
+            'bank_detail_id' => 'nullable|exists:seller_bank_details,id',
+            'transaction_id' => 'nullable|string|max:255',
+            'swift_copy' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'notes' => 'nullable|string',
         ]);
 
         $validated['created_by'] = Auth::id();
+
+        // Handle SWIFT copy image upload
+        if ($request->hasFile('swift_copy')) {
+            $swiftCopyPath = $request->file('swift_copy')->store('swift-copies', 'public');
+            $validated['swift_copy'] = $swiftCopyPath;
+        }
 
         Payment::create($validated);
 
@@ -256,5 +281,191 @@ class PaymentController extends Controller
 
         return redirect()->route($redirectRoute)
             ->with('success', ucfirst($validated['type']) . ' payment added successfully.');
+    }
+
+    /**
+     * Get sellers by country (AJAX)
+     */
+    public function getSellersByCountry(Request $request)
+    {
+        if (!$request->filled('country_id')) {
+            return response()->json([]);
+        }
+
+        $countryId = (int) $request->country_id;
+
+        $sellers = Seller::with(['country'])
+            ->where('country_id', $countryId)
+            ->orderBy('seller_name')
+            ->get()
+            ->map(function($seller) {
+                return [
+                    'id' => $seller->id,
+                    'seller_name' => $seller->seller_name,
+                    'pi_short_name' => $seller->pi_short_name ?? '',
+                    'country' => $seller->country ? ['name' => $seller->country->name] : null,
+                ];
+            });
+
+        return response()->json($sellers);
+    }
+
+    /**
+     * Get bank details by seller (AJAX)
+     */
+    public function getBankDetailsBySeller(Request $request)
+    {
+        if (!$request->filled('seller_id')) {
+            return response()->json([]);
+        }
+
+        $bankDetails = SellerBankDetail::where('seller_id', $request->seller_id)
+            ->orderBy('bank_name')
+            ->get()
+            ->map(function($bank) {
+                return [
+                    'id' => $bank->id,
+                    'bank_name' => $bank->bank_name,
+                    'account_number' => $bank->account_number,
+                    'ifsc_code' => $bank->ifsc_code,
+                    'branch_name' => $bank->branch_name,
+                    'account_holder_name' => $bank->account_holder_name,
+                ];
+            });
+
+        return response()->json($bankDetails);
+    }
+
+    /**
+     * Display the specified payment
+     */
+    public function show(Payment $payment)
+    {
+        $payment->load([
+            'contract.creator',
+            'proformaInvoice.contract.creator',
+            'proformaInvoice.seller',
+            'creator',
+            'payeeCountry',
+            'paymentToSeller',
+            'bankDetail'
+        ]);
+
+        return view('payments.show', compact('payment'));
+    }
+
+    /**
+     * Show the form for editing the specified payment
+     */
+    public function edit(Payment $payment)
+    {
+        $payment->load([
+            'contract.creator',
+            'proformaInvoice.contract.creator',
+            'proformaInvoice.seller',
+            'payeeCountry',
+            'paymentToSeller',
+            'bankDetail'
+        ]);
+
+        // Get sales managers
+        $salesManagers = User::whereIn('id', function($query) {
+            $query->select('created_by')
+                ->from('contracts')
+                ->distinct();
+        })->select('id', 'name')->orderBy('name')->get();
+
+        // Get countries
+        $countries = Country::orderBy('name')->get();
+
+        // Get sellers for the selected country if exists
+        $sellers = collect();
+        if ($payment->payee_country_id) {
+            $sellers = Seller::where('country_id', $payment->payee_country_id)
+                ->orderBy('seller_name')
+                ->get();
+        }
+
+        // Get bank details for the selected seller if exists
+        $bankDetails = collect();
+        if ($payment->payment_to_seller_id) {
+            $bankDetails = SellerBankDetail::where('seller_id', $payment->payment_to_seller_id)
+                ->orderBy('bank_name')
+                ->get();
+        }
+
+        return view('payments.edit', compact('payment', 'salesManagers', 'countries', 'sellers', 'bankDetails'));
+    }
+
+    /**
+     * Update the specified payment
+     */
+    public function update(Request $request, Payment $payment)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'payment_date' => 'required|date',
+            'payment_method' => 'nullable|string|max:255',
+            'payment_by' => 'nullable|string|max:255',
+            'payee_country_id' => 'nullable|exists:countries,id',
+            'payment_to_seller_id' => 'nullable|exists:sellers,id',
+            'bank_detail_id' => 'nullable|exists:seller_bank_details,id',
+            'transaction_id' => 'nullable|string|max:255',
+            'swift_copy' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Handle SWIFT copy image upload
+        if ($request->hasFile('swift_copy')) {
+            // Delete old file if exists
+            if ($payment->swift_copy && Storage::disk('public')->exists($payment->swift_copy)) {
+                Storage::disk('public')->delete($payment->swift_copy);
+            }
+            $swiftCopyPath = $request->file('swift_copy')->store('swift-copies', 'public');
+            $validated['swift_copy'] = $swiftCopyPath;
+        }
+
+        $payment->update($validated);
+
+        return redirect()->route('payments.index')
+            ->with('success', 'Payment updated successfully.');
+    }
+
+    /**
+     * Remove the specified payment
+     */
+    public function destroy(Payment $payment)
+    {
+        // Delete SWIFT copy file if exists
+        if ($payment->swift_copy && Storage::disk('public')->exists($payment->swift_copy)) {
+            Storage::disk('public')->delete($payment->swift_copy);
+        }
+
+        $payment->delete();
+
+        return redirect()->route('payments.index')
+            ->with('success', 'Payment deleted successfully.');
+    }
+
+    /**
+     * Download payment as PDF
+     */
+    public function downloadPdf(Payment $payment)
+    {
+        $payment->load([
+            'contract.creator',
+            'proformaInvoice.contract.creator',
+            'proformaInvoice.seller',
+            'creator',
+            'payeeCountry',
+            'paymentToSeller',
+            'bankDetail'
+        ]);
+
+        $pdf = DomPDF::loadView('payments.pdf', compact('payment'));
+
+        $fileName = 'payment-' . ($payment->type === 'collect' ? 'collect' : 'return') . '-' . $payment->id . '-' . $payment->payment_date->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($fileName);
     }
 }

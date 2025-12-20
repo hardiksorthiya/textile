@@ -20,10 +20,12 @@ class CountryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:countries,name',
+            'currency' => 'nullable|string|max:10',
         ]);
 
         $country = Country::create([
             'name' => $request->name,
+            'currency' => $request->currency,
         ]);
 
         // Return JSON response for AJAX requests (from sellers page)
@@ -47,10 +49,12 @@ class CountryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:countries,name,' . $country->id,
+            'currency' => 'nullable|string|max:10',
         ]);
 
         $country->update([
             'name' => $request->name,
+            'currency' => $request->currency,
         ]);
 
         return redirect()->route('countries.index')

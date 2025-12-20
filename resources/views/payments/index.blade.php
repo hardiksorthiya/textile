@@ -1,4 +1,54 @@
 <x-app-layout>
+    <style>
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .action-btn-view {
+            border: 1px solid #06b6d4;
+            color: #06b6d4;
+        }
+        .action-btn-view:hover {
+            background-color: #06b6d4;
+            color: white;
+        }
+        .action-btn-edit {
+            border: 1px solid #800020;
+            color: #800020;
+        }
+        .action-btn-edit:hover {
+            background-color: #800020;
+            color: white;
+        }
+        .action-btn-pdf {
+            border: 1px solid #10b981;
+            color: #10b981;
+        }
+        .action-btn-pdf:hover {
+            background-color: #10b981;
+            color: white;
+        }
+        .action-btn-delete {
+            border: 1px solid #dc2626;
+            color: #dc2626;
+        }
+        .action-btn-delete:hover {
+            background-color: #dc2626;
+            color: white;
+        }
+    </style>
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
             <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Payment Management</h1>
@@ -100,11 +150,12 @@
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Type</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Payment Date</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Contract Number</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">PI Number</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Customer Name</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Amount</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Payment Method</th>
-                            <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Reference Number</th>
                             <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important;">Created By</th>
+                            <th class="px-4 py-3 text-uppercase small fw-bold text-center" style="color: var(--primary-color) !important;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -126,6 +177,9 @@
                                     </div>
                                 </td>
                                 <td class="px-4 py-3">
+                                    <div style="color: #6b7280;">{{ $payment->proformaInvoice->proforma_invoice_number ?? 'N/A' }}</div>
+                                </td>
+                                <td class="px-4 py-3">
                                     <div class="fw-semibold" style="color: #1f2937;">
                                         {{ $payment->contract->buyer_name ?? ($payment->proformaInvoice->buyer_company_name ?? 'N/A') }}
                                         @if($payment->contract && $payment->contract->company_name)
@@ -142,15 +196,32 @@
                                     <span class="badge bg-info text-capitalize">{{ $payment->payment_method ?? 'N/A' }}</span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <div style="color: #6b7280;">{{ $payment->reference_number ?? 'N/A' }}</div>
+                                    <small class="text-muted">{{ $payment->creator->name ?? 'N/A' }}</small>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <small class="text-muted">{{ $payment->creator->name ?? 'N/A' }}</small>
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <a href="{{ route('payments.show', $payment->id) }}" class="action-btn action-btn-view" title="View">
+                                            <i class="fas fa-eye" style="font-size: 14px;"></i>
+                                        </a>
+                                        <a href="{{ route('payments.edit', $payment->id) }}" class="action-btn action-btn-edit" title="Edit">
+                                            <i class="fas fa-edit" style="font-size: 14px;"></i>
+                                        </a>
+                                        <a href="{{ route('payments.download-pdf', $payment->id) }}" class="action-btn action-btn-pdf" title="Download PDF">
+                                            <i class="fas fa-file-pdf" style="font-size: 14px;"></i>
+                                        </a>
+                                        <form action="{{ route('payments.destroy', $payment->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this payment?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="action-btn action-btn-delete" title="Delete">
+                                                <i class="fas fa-trash" style="font-size: 14px;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-5">
+                                <td colspan="9" class="text-center text-muted py-5">
                                     <div class="d-flex flex-column align-items-center">
                                         <i class="fas fa-money-bill-wave fa-3x mb-3" style="color: #d1d5db; opacity: 0.5;"></i>
                                         <p class="mb-0">No payments found.</p>

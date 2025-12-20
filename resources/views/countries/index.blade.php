@@ -46,6 +46,17 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold" style="color: #374151;">Currency</label>
+                                <input type="text" name="currency"
+                                       value="{{ old('currency') }}"
+                                       class="form-control @error('currency') is-invalid @enderror"
+                                       placeholder="Enter currency (e.g., USD, INR, EUR)"
+                                       style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                @error('currency')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                             <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                                 <i class="fas fa-plus me-2"></i>Add Country
                             </button>
@@ -64,6 +75,14 @@
                                            x-model="editingCountry.name"
                                            class="form-control"
                                            placeholder="Enter country name"
+                                           style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold" style="color: #374151;">Currency</label>
+                                    <input type="text" name="currency"
+                                           x-model="editingCountry.currency"
+                                           class="form-control"
+                                           placeholder="Enter currency (e.g., USD, INR, EUR)"
                                            style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                 </div>
                                 <div class="d-flex gap-2">
@@ -98,6 +117,7 @@
                             <thead class="sticky-top" style="background: linear-gradient(to right, color-mix(in srgb, var(--primary-color) 12%, #ffffff), color-mix(in srgb, var(--primary-color) 18%, #ffffff)) !important;">
                                 <tr>
                                     <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important; border-bottom: 1px solid #d8b4fe !important;">Country Name</th>
+                                    <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important; border-bottom: 1px solid #d8b4fe !important;">Currency</th>
                                     <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important; border-bottom: 1px solid #d8b4fe !important;">Created</th>
                                     <th class="px-4 py-3 text-uppercase small fw-bold" style="color: var(--primary-color) !important; border-bottom: 1px solid #d8b4fe !important;">Actions</th>
                                 </tr>
@@ -118,6 +138,13 @@
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
+                                            @if($country->currency)
+                                                <span class="badge bg-info" style="font-size: 0.875rem; padding: 0.35rem 0.65rem;">{{ $country->currency }}</span>
+                                            @else
+                                                <span class="text-muted" style="font-size: 0.875rem;">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3">
                                             <div class="d-flex align-items-center">
                                                 <i class="fas fa-calendar-alt me-2 text-muted" style="font-size: 0.75rem;"></i>
                                                 <small class="text-muted" style="font-size: 0.8rem;">{{ $country->created_at->format('M d, Y') }}</small>
@@ -128,7 +155,8 @@
                                                 <button type="button" 
                                                         @click="editCountry({
                                                             id: {{ $country->id }},
-                                                            name: '{{ addslashes($country->name) }}'
+                                                            name: '{{ addslashes($country->name) }}',
+                                                            currency: '{{ addslashes($country->currency ?? '') }}'
                                                         })"
                                                         class="btn btn-sm btn-outline-primary" 
                                                         title="Edit Country"
@@ -150,7 +178,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="text-center text-muted py-5">
+                                        <td colspan="4" class="text-center text-muted py-5">
                                             <div class="d-flex flex-column align-items-center">
                                                 <i class="fas fa-globe fa-3x mb-3" style="color: #d1d5db; opacity: 0.5;"></i>
                                                 <p class="mb-0" style="font-size: 0.9rem;">No countries found.</p>

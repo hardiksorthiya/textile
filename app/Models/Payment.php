@@ -16,7 +16,12 @@ class Payment extends Model
         'amount',
         'payment_date',
         'payment_method',
-        'reference_number',
+        'payment_by',
+        'payee_country_id',
+        'payment_to_seller_id',
+        'bank_detail_id',
+        'transaction_id',
+        'swift_copy',
         'notes',
         'created_by',
     ];
@@ -39,5 +44,20 @@ class Payment extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function payeeCountry()
+    {
+        return $this->belongsTo(Country::class, 'payee_country_id');
+    }
+
+    public function paymentToSeller()
+    {
+        return $this->belongsTo(Seller::class, 'payment_to_seller_id');
+    }
+
+    public function bankDetail()
+    {
+        return $this->belongsTo(SellerBankDetail::class, 'bank_detail_id');
     }
 }

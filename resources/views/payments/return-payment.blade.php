@@ -19,6 +19,16 @@
         proformaInvoiceDropdownOpen: false,
         contracts: @js($contracts ?? []),
         proformaInvoices: @js($proformaInvoices ?? []),
+        selectedPayeeCountry: '',
+        selectedSellerId: null,
+        selectedBankId: null,
+        sellerSearch: '',
+        sellerDropdownOpen: false,
+        sellers: [],
+        bankDetails: [],
+        selectedCurrency: '',
+        selectedPaymentMode: '',
+        countries: @js(collect($countries ?? [])->map(function($c) { return ['id' => $c->id, 'name' => $c->name, 'currency' => $c->currency ?? '$']; })->values()->toArray()),
         
         get filteredContracts() {
             if (!this.contractSearch) return this.contracts;
@@ -51,6 +61,77 @@
             this.selectedContractId = null;
             this.proformaInvoiceDropdownOpen = false;
             window.location.href = '{{ route('payments.return-payment') }}?proforma_invoice_id=' + piId + '&sales_manager=' + this.selectedSalesManager;
+        },
+        
+        loadSellers() {
+            if (!this.selectedPayeeCountry) {
+                this.sellers = [];
+                this.selectedSellerId = null;
+                this.selectedBankId = null;
+                this.bankDetails = [];
+                this.selectedCurrency = '';
+                return;
+            }
+
+            // Get currency from selected country
+            const selectedCountry = this.countries.find(c => c.id == this.selectedPayeeCountry);
+            this.selectedCurrency = selectedCountry ? (selectedCountry.currency || '$') : '';
+            
+            fetch('{{ route('payments.get-sellers-by-country') }}?country_id=' + this.selectedPayeeCountry)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    this.sellers = data || [];
+                    this.selectedSellerId = null;
+                    this.selectedBankId = null;
+                    this.bankDetails = [];
+                })
+                .catch(error => {
+                    console.error('Error loading sellers:', error);
+                    this.sellers = [];
+                });
+        },
+        
+        get filteredSellers() {
+            if (!this.sellerSearch) return this.sellers;
+            const search = this.sellerSearch.toLowerCase();
+            return this.sellers.filter(s => 
+                (s.seller_name && s.seller_name.toLowerCase().includes(search)) ||
+                (s.pi_short_name && s.pi_short_name.toLowerCase().includes(search))
+            );
+        },
+        
+        selectSeller(sellerId) {
+            this.selectedSellerId = sellerId;
+            this.selectedBankId = null;
+            this.sellerDropdownOpen = false;
+            this.loadBankDetails();
+        },
+        
+        loadBankDetails() {
+            if (!this.selectedSellerId) {
+                this.bankDetails = [];
+                this.selectedBankId = null;
+                return;
+            }
+            fetch('{{ route('payments.get-bank-details-by-seller') }}?seller_id=' + this.selectedSellerId)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    this.bankDetails = data || [];
+                })
+                .catch(error => {
+                    console.error('Error loading bank details:', error);
+                    this.bankDetails = [];
+                });
         },
         
         loadContracts() {
@@ -191,7 +272,7 @@
                 </div>
             </div>
             <div class="card-body p-4">
-                <form action="{{ route('payments.store') }}" method="POST">
+                <form action="{{ route('payments.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="type" value="return">
                     @if(isset($contract))
@@ -202,29 +283,124 @@
                     @endif
 
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="amount" class="form-label">Amount <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" name="amount" id="amount" class="form-control" required>
+                        <!-- PI Number (if proforma invoice is selected) -->
+                        @if(isset($proformaInvoice))
+                        <div class="col-md-4">
+                            <label class="form-label">PI Number</label>
+                            <input type="text" class="form-control" value="{{ $proformaInvoice->proforma_invoice_number }}" readonly style="background-color: #f3f4f6;">
                         </div>
+                        @endif
+
+                        <!-- Contract Number -->
+                        <div class="col-md-4">
+                            <label class="form-label">Contract Number</label>
+                            <input type="text" class="form-control" 
+                                   value="{{ isset($contract) ? $contract->contract_number : (isset($proformaInvoice) && $proformaInvoice->contract ? $proformaInvoice->contract->contract_number : 'N/A') }}" 
+                                   readonly style="background-color: #f3f4f6;">
+                        </div>
+
+                        <!-- Buyer Name -->
+                        <div class="col-md-4">
+                            <label class="form-label">Buyer Name</label>
+                            <input type="text" class="form-control" 
+                                   value="{{ isset($contract) ? $contract->buyer_name . ($contract->company_name ? ' (' . $contract->company_name . ')' : '') : (isset($proformaInvoice) ? $proformaInvoice->buyer_company_name : 'N/A') }}" 
+                                   readonly style="background-color: #f3f4f6;">
+                        </div>
+
                         <div class="col-md-6">
                             <label for="payment_date" class="form-label">Payment Date <span class="text-danger">*</span></label>
                             <input type="date" name="payment_date" id="payment_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="payment_method" class="form-label">Payment Method</label>
-                            <select name="payment_method" id="payment_method" class="form-select">
-                                <option value="">Select Payment Method</option>
-                                <option value="cash">Cash</option>
-                                <option value="bank_transfer">Bank Transfer</option>
-                                <option value="cheque">Cheque</option>
-                                <option value="credit_card">Credit Card</option>
-                                <option value="debit_card">Debit Card</option>
-                                <option value="online">Online Payment</option>
+                            <label for="payment_method" class="form-label">Payment Mode</label>
+                            <select name="payment_method" id="payment_method" x-model="selectedPaymentMode" class="form-select">
+                                <option value="">Select Payment Mode</option>
+                                <option value="UPI">UPI</option>
+                                <option value="NEFT">NEFT</option>
+                                <option value="CHEQUE">CHEQUE</option>
+                                <option value="CASH">CASH</option>
+                                <option value="TT">TT</option>
+                                <option value="LC">LC</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="reference_number" class="form-label">Reference Number</label>
-                            <input type="text" name="reference_number" id="reference_number" class="form-control">
+                            <label for="payment_by" class="form-label">Payment By</label>
+                            <input type="text" name="payment_by" id="payment_by" class="form-control" placeholder="Enter payment by">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="payee_country_id" class="form-label">Payee</label>
+                            <select name="payee_country_id" id="payee_country_id" x-model="selectedPayeeCountry" @change="loadSellers()" class="form-select">
+                                <option value="">Select Payee (Country)</option>
+                                @foreach($countries as $country)
+                                    <option value="{{ $country->id }}">{{ $country->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="payment_to_seller_id" class="form-label">Payment To</label>
+                            <div class="position-relative" @click.away="sellerDropdownOpen = false">
+                                <button type="button" 
+                                        @click="sellerDropdownOpen = !sellerDropdownOpen"
+                                        class="form-control text-start d-flex justify-content-between align-items-center"
+                                        style="border-radius: 8px; border: 1px solid #e5e7eb; background: white; min-height: 38px;"
+                                        :disabled="!selectedPayeeCountry">
+                                    <span x-text="selectedSellerId ? sellers.find(s => s.id == selectedSellerId)?.seller_name || 'Select Seller' : 'Select Seller'"></span>
+                                    <i class="fas fa-chevron-down" :class="{ 'rotate-180': sellerDropdownOpen }"></i>
+                                </button>
+                                <div x-show="sellerDropdownOpen" 
+                                     x-cloak
+                                     class="position-absolute w-100 bg-white border rounded shadow-lg mt-1"
+                                     style="z-index: 1000; max-height: 300px; overflow-y: auto; border-color: #e5e7eb !important;"
+                                     @click.stop>
+                                    <div class="p-2 border-bottom">
+                                        <input type="text" 
+                                               x-model="sellerSearch" 
+                                               @click.stop
+                                               placeholder="Search seller..."
+                                               class="form-control form-control-sm">
+                                    </div>
+                                    <template x-if="filteredSellers.length === 0">
+                                        <div class="p-3 text-center text-muted">No sellers found</div>
+                                    </template>
+                                    <template x-for="seller in filteredSellers" :key="seller.id">
+                                        <div class="d-flex align-items-center py-2 px-3 cursor-pointer hover:bg-gray-100" 
+                                             @click="selectSeller(seller.id)"
+                                             style="cursor: pointer;"
+                                             :class="{ 'bg-primary text-white': selectedSellerId == seller.id }">
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold" x-text="seller.seller_name"></div>
+                                                <small x-text="seller.pi_short_name"></small>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <input type="hidden" name="payment_to_seller_id" x-model="selectedSellerId">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="bank_detail_id" class="form-label">Bank Name</label>
+                            <select name="bank_detail_id" id="bank_detail_id" x-model="selectedBankId" class="form-select" :disabled="!selectedSellerId">
+                                <option value="">Select Bank</option>
+                                <template x-for="bank in bankDetails" :key="bank.id">
+                                    <option :value="bank.id" x-text="bank.bank_name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="transaction_id" class="form-label">Transaction ID</label>
+                            <input type="text" name="transaction_id" id="transaction_id" class="form-control" placeholder="Enter transaction ID">
+                        </div>
+                        <div class="col-md-6" x-show="selectedPayeeCountry && selectedCurrency === '$'" x-cloak>
+                            <label for="swift_copy" class="form-label">SWIFT Copy <span class="text-muted">(Image)</span></label>
+                            <input type="file" name="swift_copy" id="swift_copy" accept="image/*" class="form-control">
+                            <small class="text-muted">Upload SWIFT copy image (JPG, PNG, etc.)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label">Amount <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="background-color: #f3f4f6; border: 1px solid #e5e7eb; border-right: none; border-radius: 8px 0 0 8px; font-weight: 600; min-width: 50px; justify-content: center;" x-text="selectedCurrency || '$'"></span>
+                                <input type="number" step="0.01" name="amount" id="amount" class="form-control" required style="border-radius: 0 8px 8px 0;">
+                            </div>
                         </div>
                         <div class="col-12">
                             <label for="notes" class="form-label">Notes</label>

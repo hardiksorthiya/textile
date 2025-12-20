@@ -250,6 +250,13 @@
     </a>
     @endcanany
 
+    @canany(['view proforma invoices', 'view contract approvals'])
+    <a href="{{ route('purchase-orders.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('purchase-orders.*') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-shopping-bag w-5 mr-3"></i>
+        <span>Purchase Order</span>
+    </a>
+    @endcanany
+
     @can('view reports')
     <a href="{{ route('reports.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('reports.*') ? 'sidebar-active' : '' }}">
         <i class="fas fa-chart-bar w-5 mr-3"></i>
@@ -271,8 +278,8 @@
     @endcan
 
     @canany(['view settings', 'edit settings'])
-    <div x-data="{ open: {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') ? 'sidebar-active' : '' }}">
+    <div x-data="{ open: {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') || request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'true' : 'false' }} }" class="space-y-2">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') || request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
                 <i class="fas fa-cog w-5 mr-3"></i>
                 <span>Settings</span>
@@ -291,6 +298,10 @@
             <a href="{{ route('business-firms.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('business-firms.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-briefcase w-4 mr-2"></i>
                 <span>Business Firm</span>
+            </a>
+            <a href="{{ route('settings.port-of-destinations') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-anchor w-4 mr-2"></i>
+                <span>Port of Destination</span>
             </a>
         </div>
     </div>

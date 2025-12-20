@@ -5,17 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Country extends Model
+class PortOfDestination extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'name',
-        'currency',
+        'code',
+        'description',
     ];
 
-    public function sellers()
+    public function purchaseOrders()
     {
-        return $this->hasMany(Seller::class);
+        return $this->hasMany(PurchaseOrder::class);
     }
 }

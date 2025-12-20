@@ -39,6 +39,8 @@ use App\Http\Controllers\ContractController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ProformaInvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\PortOfDestinationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -211,6 +213,21 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/pi-layouts-settings', [SettingController::class, 'piLayouts'])
             ->name('settings.pi-layouts')
             ->middleware('permission:view settings');
+        Route::get('/admin/port-of-destinations-settings', [PortOfDestinationController::class, 'index'])
+            ->name('settings.port-of-destinations')
+            ->middleware('permission:view settings');
+        Route::get('/admin/port-of-destinations', [PortOfDestinationController::class, 'index'])
+            ->name('port-of-destinations.index')
+            ->middleware('permission:view settings');
+        Route::post('/admin/port-of-destinations', [PortOfDestinationController::class, 'store'])
+            ->name('port-of-destinations.store')
+            ->middleware('permission:edit settings');
+        Route::put('/admin/port-of-destinations/{portOfDestination}', [PortOfDestinationController::class, 'update'])
+            ->name('port-of-destinations.update')
+            ->middleware('permission:edit settings');
+        Route::delete('/admin/port-of-destinations/{portOfDestination}', [PortOfDestinationController::class, 'destroy'])
+            ->name('port-of-destinations.destroy')
+            ->middleware('permission:edit settings');
     });
     
     // Lead Management Routes - Permission based
@@ -302,7 +319,27 @@ Route::middleware('auth')->group(function () {
         Route::get('/payments/return-payment', [PaymentController::class, 'returnPayment'])->name('payments.return-payment');
         Route::get('/payments/get-contracts', [PaymentController::class, 'getContractsBySalesManager'])->name('payments.get-contracts');
         Route::get('/payments/get-proforma-invoices', [PaymentController::class, 'getProformaInvoicesBySalesManager'])->name('payments.get-proforma-invoices');
+        Route::get('/payments/get-sellers-by-country', [PaymentController::class, 'getSellersByCountry'])->name('payments.get-sellers-by-country');
+        Route::get('/payments/get-bank-details-by-seller', [PaymentController::class, 'getBankDetailsBySeller'])->name('payments.get-bank-details-by-seller');
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+        Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+        Route::get('/payments/{payment}/edit', [PaymentController::class, 'edit'])->name('payments.edit');
+        Route::put('/payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
+        Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+        Route::get('/payments/{payment}/download-pdf', [PaymentController::class, 'downloadPdf'])->name('payments.download-pdf');
+    });
+    
+    // Purchase Order Routes
+    Route::middleware(['permission:view proforma invoices|view contract approvals'])->group(function () {
+        Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+        Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
+        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+        Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+        Route::get('/purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
+        Route::put('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+        Route::delete('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])->name('purchase-orders.destroy');
+        Route::get('/purchase-orders/get-first-payment/{proformaInvoiceId}', [PurchaseOrderController::class, 'getFirstPaymentTransaction'])->name('purchase-orders.get-first-payment');
+        Route::delete('/purchase-orders/attachments/{attachment}', [PurchaseOrderController::class, 'deleteAttachment'])->name('purchase-orders.delete-attachment');
     });
     
     // Lead helper routes (available to anyone with view leads permission)
