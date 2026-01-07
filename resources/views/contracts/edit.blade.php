@@ -304,6 +304,24 @@
                                                                     </select>
                                                                 </div>
                                                             </template>
+                                                            <!-- Machine Seller - only show when category is selected -->
+                                                            <template x-if="machine.categoryItems && machine.categoryItems.sellers && machine.categoryItems.sellers.length > 0">
+                                                                <div class="col-md-4">
+                                                                    <label class="form-label fw-semibold"
+                                                                        style="color: #374151;">Machine Seller</label>
+                                                                    <select :name="`machines[${index}][seller_id]`"
+                                                                        x-model="machine.seller_id"
+                                                                        :id="`seller_${index}`" class="form-select"
+                                                                        style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                                                        <template
+                                                                            x-for="seller in (machine.categoryItems?.sellers || [])"
+                                                                            :key="seller.id">
+                                                                            <option :value="String(seller.id)"
+                                                                                x-text="seller.seller_name"></option>
+                                                                        </template>
+                                                                    </select>
+                                                                </div>
+                                                            </template>
                                                             <!-- Model - only show when brand is selected -->
                                                             <template x-if="machine.brand_id">
                                                                 <div class="col-md-4">
@@ -1090,6 +1108,7 @@
                     machine_category_id: '',
                     brand_id: '',
                     machine_model_id: '',
+                    seller_id: '',
                     quantity: 1,
                     description: '',
                     categoryItems: null,
@@ -1121,6 +1140,7 @@
                         machine.machine_category_id = machine.machine_category_id != null ? String(machine.machine_category_id) : '';
                         machine.brand_id = machine.brand_id != null ? String(machine.brand_id) : '';
                         machine.machine_model_id = machine.machine_model_id != null ? String(machine.machine_model_id) : '';
+                        machine.seller_id = machine.seller_id != null ? String(machine.seller_id) : '';
                         // Convert all other IDs to strings (preserve actual values including 0)
                         machine.feeder_id = machine.feeder_id != null ? String(machine.feeder_id) : '';
                         machine.machine_hook_id = machine.machine_hook_id != null ? String(machine.machine_hook_id) : '';
@@ -1157,6 +1177,7 @@
                         machine_category_id: '',
                         brand_id: '',
                         machine_model_id: '',
+                        seller_id: '',
                         quantity: 1,
                         description: '',
                         categoryItems: null,
@@ -1235,6 +1256,7 @@
                         this.machines[index].categoryItems = null;
                         this.machines[index].brand_id = '';
                         this.machines[index].machine_model_id = '';
+                        this.machines[index].seller_id = '';
                         return;
                     }
                     try {
@@ -1246,6 +1268,7 @@
                         // Preserve actual values including empty strings (use nullish coalescing only for null/undefined)
                         const existingBrandId = preserveValues ? (this.machines[index].brand_id != null ? String(this.machines[index].brand_id) : '') : '';
                         const existingModelId = preserveValues ? (this.machines[index].machine_model_id != null ? String(this.machines[index].machine_model_id) : '') : '';
+                        const existingSellerId = preserveValues ? (this.machines[index].seller_id != null ? String(this.machines[index].seller_id) : '') : '';
                         const existingFeederId = preserveValues ? (this.machines[index].feeder_id != null ? String(this.machines[index].feeder_id) : '') : '';
                         const existingHookId = preserveValues ? (this.machines[index].machine_hook_id != null ? String(this.machines[index].machine_hook_id) : '') : '';
                         const existingEReadId = preserveValues ? (this.machines[index].machine_e_read_id != null ? String(this.machines[index].machine_e_read_id) : '') : '';
@@ -1270,9 +1293,10 @@
                         await this.$nextTick();
 
                         if (!preserveValues) {
-                            // Reset brand and model when category changes
+                            // Reset brand, model, and seller when category changes
                             this.machines[index].brand_id = '';
                             this.machines[index].machine_model_id = '';
+                            this.machines[index].seller_id = '';
                             this.machines[index].machineModels = [];
 
                             // Auto-select first brand if available
@@ -1286,6 +1310,14 @@
                             await this.$nextTick();
                             if (items.feeders && items.feeders.length > 0) {
                                 this.machines[index].feeder_id = String(items.feeders[0].id);
+                            }
+                            // Restore seller if preserved
+                            if (preserveValues && existingSellerId && existingSellerId !== '' && items.sellers && items.sellers.length > 0) {
+                                const sellerIdStr = String(existingSellerId);
+                                const sellerExists = items.sellers.some(s => String(s.id) === sellerIdStr);
+                                if (sellerExists) {
+                                    this.machines[index].seller_id = sellerIdStr;
+                                }
                             }
                             if (items.machine_hooks && items.machine_hooks.length > 0) {
                                 this.machines[index].machine_hook_id = String(items.machine_hooks[0].id);
@@ -1403,6 +1435,25 @@
                             };
 
                             // Restore all values explicitly - ensure correct values are restored
+                            // Sellers
+                            await this.$nextTick();
+                            if (existingSellerId != null && existingSellerId !== '' && items.sellers && items.sellers.length > 0) {
+                                const sellerIdStr = String(existingSellerId);
+                                const sellerExists = items.sellers.some(s => String(s.id) === sellerIdStr);
+                                if (sellerExists) {
+                                    this.machines[index].seller_id = sellerIdStr;
+                                    await this.$nextTick();
+                                    this.machines[index].seller_id = sellerIdStr;
+                                    await this.$nextTick();
+                                    this.machines[index].seller_id = sellerIdStr;
+                                    const selectElement = document.getElementById(`seller_${index}`);
+                                    if (selectElement) {
+                                        selectElement.value = sellerIdStr;
+                                        selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+                                    }
+                                }
+                            }
+
                             // Feeders
                             await this.$nextTick();
                             

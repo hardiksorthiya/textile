@@ -185,6 +185,17 @@
                             @enderror
                         </div>
 
+                        <div class="col-12">
+                            <label for="address" class="form-label fw-semibold">Address</label>
+                            <textarea name="address" id="address" rows="3" 
+                                      class="form-control @error('address') is-invalid @enderror"
+                                      placeholder="Enter address"
+                                      style="border-radius: 8px; border: 1px solid #e5e7eb;">{{ old('address', $selectedPI->billing_address ?? $selectedPI->shipping_address ?? '') }}</textarea>
+                            @error('address')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <!-- Machine Details from PI -->
                         <div class="col-12 mt-4">
                             <h5 class="fw-bold mb-3" style="color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Machine Details (from PI)</h5>

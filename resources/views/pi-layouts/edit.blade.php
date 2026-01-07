@@ -4,7 +4,7 @@
             <h1 class="h2 fw-bold mb-1" style="color: #1f2937;">Edit PI Layout</h1>
             <p class="text-muted mb-0">Edit layout: {{ $piLayout->name }}</p>
         </div>
-        <a href="{{ route('pi-layouts.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ route('settings.pi-layouts') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i>Back to Layouts
         </a>
     </div>
@@ -125,7 +125,7 @@
                 </div>
 
                 <div class="d-flex gap-2 justify-content-end">
-                    <a href="{{ route('pi-layouts.index') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('settings.pi-layouts') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-times me-2"></i>Cancel
                     </a>
                     <button type="submit" class="btn btn-primary">

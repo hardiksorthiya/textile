@@ -102,4 +102,9 @@ class MachineCategory extends Model
     {
         return $this->belongsToMany(MachineERead::class, 'machine_e_read_machine_category');
     }
+
+    public function spares()
+    {
+        return $this->belongsToMany(Spare::class, 'spare_machine_category');
+    }
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ProformaInvoice;
 use App\Models\ProformaInvoiceMachine;
+use App\Models\PIDeliveryDetail;
+use App\Models\PIDocument;
 use App\Models\Contract;
 use App\Models\ContractMachine;
 use App\Models\User;
@@ -30,6 +32,7 @@ use App\Models\DeliveryTerm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf as DomPDF;
 
 class ProformaInvoiceController extends Controller
@@ -404,6 +407,7 @@ class ProformaInvoiceController extends Controller
             'proformaInvoiceMachines.contractMachine.machineCategory',
             'proformaInvoiceMachines.contractMachine.brand',
             'proformaInvoiceMachines.contractMachine.machineModel',
+            'deliveryDetails',
             'creator'
         ]);
         
@@ -884,5 +888,184 @@ class ProformaInvoiceController extends Controller
         
         // Fallback: if suffix is not a single letter, start with _A
         return $baseNumber . '_A';
+    }
+
+    /**
+     * Show delivery details form for a proforma invoice
+     */
+    public function deliveryDetails(ProformaInvoice $proformaInvoice)
+    {
+        $proformaInvoice->load('deliveryDetails');
+        
+        // Define all delivery document types
+        $deliveryDocuments = [
+            'Commercial Invoice',
+            'Packing List',
+            'Country of Origin Certificate',
+            'Bill of Landing',
+            'Container Number',
+            'Port of Arrival',
+            'Port of Discharge',
+            'Expected Date of Arrival',
+            'Marine Insurance',
+            'Name of Vessel',
+            'Name of CHA (Clearing Agent)',
+            'Date of Dispatch',
+            'Actual Date of Arrival',
+            'Land Insurance',
+            'Date of Loading from Port',
+            'Delivery at Buyer\'s Factory',
+        ];
+
+        // Load delivery details and documents
+        $proformaInvoice->load(['deliveryDetails', 'documents']);
+        
+        // Get existing delivery details indexed by document name
+        $existingDetails = $proformaInvoice->deliveryDetails->keyBy('document_name');
+        
+        // Get existing uploaded images
+        $existingImages = $proformaInvoice->documents;
+
+        return view('proforma-invoices.delivery-details', compact('proformaInvoice', 'deliveryDocuments', 'existingDetails', 'existingImages'));
+    }
+
+    /**
+     * Store or update delivery details for a proforma invoice
+     */
+    public function storeDeliveryDetails(Request $request, ProformaInvoice $proformaInvoice)
+    {
+        $request->validate([
+            'delivery_details' => 'required|array',
+            'delivery_details.*.document_name' => 'required|string|max:255',
+            'delivery_details.*.date' => 'nullable|date',
+            'delivery_details.*.document_number' => 'nullable|string|max:255',
+            'delivery_details.*.no_of_copies' => 'nullable|integer|min:0',
+            'delivery_details.*.is_received' => 'nullable',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240', // Max 10MB per image
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Get existing delivery details indexed by document name
+            $existingDetails = $proformaInvoice->deliveryDetails->keyBy('document_name');
+
+            // Update or create delivery details only for rows with data
+            $sortOrder = 0;
+            foreach ($request->delivery_details as $index => $detail) {
+                if (!empty($detail['document_name'])) {
+                    $documentName = $detail['document_name'];
+                    
+                    // Check if this row has any data to save (date, number, copies, or checkbox)
+                    $hasDate = !empty($detail['date']);
+                    $hasNumber = !empty($detail['document_number']) && trim($detail['document_number']) !== '';
+                    $hasCopies = isset($detail['no_of_copies']) && $detail['no_of_copies'] !== '' && $detail['no_of_copies'] !== null;
+                    $hasCheckbox = isset($detail['is_received']);
+                    
+                    // Only save if there's at least one field filled
+                    if ($hasDate || $hasNumber || $hasCopies || $hasCheckbox) {
+                        // Checkbox: if not set, it means unchecked (false)
+                        $isReceived = isset($detail['is_received']) && ($detail['is_received'] == '1' || $detail['is_received'] === true || $detail['is_received'] === 'on');
+                        
+                        // Check if this document detail already exists
+                        if ($existingDetails->has($documentName)) {
+                            // Update existing detail
+                            $existingDetail = $existingDetails->get($documentName);
+                            $existingDetail->update([
+                                'date' => $hasDate ? $detail['date'] : $existingDetail->date,
+                                'number' => $hasNumber ? trim($detail['document_number']) : $existingDetail->number,
+                                'no_of_copies' => $hasCopies ? (int)$detail['no_of_copies'] : $existingDetail->no_of_copies,
+                                'is_received' => $hasCheckbox ? $isReceived : $existingDetail->is_received,
+                            ]);
+                        } else {
+                            // Create new detail
+                            PIDeliveryDetail::create([
+                                'proforma_invoice_id' => $proformaInvoice->id,
+                                'document_name' => $documentName,
+                                'date' => $hasDate ? $detail['date'] : null,
+                                'number' => $hasNumber ? trim($detail['document_number']) : null,
+                                'no_of_copies' => $hasCopies ? (int)$detail['no_of_copies'] : null,
+                                'is_received' => $hasCheckbox ? $isReceived : false,
+                                'sort_order' => $sortOrder++,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Handle image uploads
+            if ($request->hasFile('images')) {
+                $rowNumber = 1;
+                foreach ($request->file('images') as $image) {
+                    if ($image->isValid()) {
+                        $fileName = time() . '_' . uniqid() . '_' . $image->getClientOriginalName();
+                        $filePath = $image->storeAs('pi-delivery-images/' . $proformaInvoice->id, $fileName, 'public');
+                        
+                        PIDocument::create([
+                            'proforma_invoice_id' => $proformaInvoice->id,
+                            'file_name' => $image->getClientOriginalName(),
+                            'file_path' => $filePath,
+                            'file_type' => $image->getMimeType(),
+                            'file_size' => $image->getSize(),
+                            'row_number' => $rowNumber++,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('proforma-invoices.show', $proformaInvoice)
+                ->with('success', 'Delivery details saved successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error saving delivery details: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->withErrors(['error' => 'Failed to save delivery details: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Display delivery details index page (list all PIs - with or without delivery details)
+     */
+    public function deliveryDetailsIndex(Request $request)
+    {
+        $query = ProformaInvoice::with(['deliveryDetails', 'contract.creator', 'creator', 'seller'])
+            ->orderBy('created_at', 'desc');
+
+        // Filter by Sales Manager (contract creator or PI creator)
+        if ($request->filled('sales_manager_id')) {
+            $query->where(function($q) use ($request) {
+                $q->whereHas('contract', function($subQ) use ($request) {
+                    $subQ->where('created_by', $request->sales_manager_id);
+                })
+                ->orWhere('created_by', $request->sales_manager_id);
+            });
+        }
+
+        // Filter by PI Number
+        if ($request->filled('pi_number')) {
+            $query->where('proforma_invoice_number', 'like', '%' . $request->pi_number . '%');
+        }
+
+        // Filter by Customer Name
+        if ($request->filled('customer_name')) {
+            $query->where('buyer_company_name', 'like', '%' . $request->customer_name . '%');
+        }
+
+        $proformaInvoices = $query->paginate(15)->withQueryString();
+        
+        // Get all users who can be sales managers (users who created contracts or PIs)
+        $salesManagers = User::where(function($q) {
+            $q->whereHas('createdContracts')
+              ->orWhereHas('createdProformaInvoices');
+        })->orderBy('name')->get();
+
+        return view('proforma-invoices.delivery-details-index', compact('proformaInvoices', 'salesManagers'));
     }
 }

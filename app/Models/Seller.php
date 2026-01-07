@@ -18,6 +18,7 @@ class Seller extends Model
         'pi_short_name',
         'gst_no',
         'signature',
+        'logo',
         'pi_layout_id',
     ];
 
@@ -39,5 +40,10 @@ class Seller extends Model
     public function piLayout()
     {
         return $this->belongsTo(PILayout::class);
+    }
+
+    public function spares()
+    {
+        return $this->belongsToMany(Spare::class, 'spare_seller');
     }
 }

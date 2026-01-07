@@ -13,6 +13,7 @@ class PurchaseOrder extends Model
         'proforma_invoice_id',
         'purchase_order_number',
         'buyer_name',
+        'address',
         'no_of_bill',
         'no_of_container',
         'size_of_container',

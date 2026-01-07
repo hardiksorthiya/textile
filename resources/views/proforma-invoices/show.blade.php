@@ -1,3 +1,6 @@
+@php
+use Illuminate\Support\Facades\Storage;
+@endphp
 <x-app-layout>
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
@@ -10,9 +13,17 @@
                 <i class="fas fa-file-pdf me-2"></i>Download PDF
             </a>
             @endcan
+            @canany(['view contract approvals', 'convert contract'])
+            <a href="{{ route('machine-statuses.create', ['proforma_invoice_id' => $proformaInvoice->id]) }}" class="btn btn-primary">
+                <i class="fas fa-tasks me-2"></i>Status
+            </a>
+            @endcanany
             @can('edit proforma invoices')
             <a href="{{ route('proforma-invoices.edit', $proformaInvoice) }}" class="btn btn-warning">
                 <i class="fas fa-edit me-2"></i>Edit
+            </a>
+            <a href="{{ route('proforma-invoices.delivery-details', $proformaInvoice) }}" class="btn btn-info">
+                <i class="fas fa-truck me-2"></i>Delivery Details
             </a>
             @endcan
             @can('delete proforma invoices')
@@ -189,4 +200,102 @@
             </div>
         </div>
     </div>
+
+    <!-- Delivery Details Section -->
+    @if($proformaInvoice->deliveryDetails && $proformaInvoice->deliveryDetails->count() > 0)
+    <div class="row g-4 mt-2">
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
+                <div class="card-header border-0 pb-0" style="background: transparent;">
+                    <div class="d-flex align-items-center justify-content-between py-3 border-bottom" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; background: linear-gradient(45deg, var(--primary-color), var(--primary-light)) !important;">
+                                <i class="fas fa-truck text-white"></i>
+                            </div>
+                            <h2 class="h5 fw-bold mb-0" style="color: #1f2937;">Delivery Details</h2>
+                        </div>
+                        @can('edit proforma invoices')
+                        <a href="{{ route('proforma-invoices.delivery-details', $proformaInvoice) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit me-2"></i>Edit Delivery Details
+                        </a>
+                        @endcan
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead style="background: linear-gradient(45deg, var(--primary-color), var(--primary-light)); color: white;">
+                                <tr>
+                                    <th style="width: 5%;" class="text-center">Status</th>
+                                    <th style="width: 5%;" class="text-center">S.No</th>
+                                    <th style="width: 25%;">Document Name</th>
+                                    <th style="width: 18%;">Date</th>
+                                    <th style="width: 22%;">Document Number</th>
+                                    <th style="width: 15%;">No. of Copies</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($proformaInvoice->deliveryDetails->sortBy('sort_order') as $index => $detail)
+                                <tr>
+                                    <td class="text-center">
+                                        @if($detail->is_received)
+                                            <span class="badge bg-success" title="Received">
+                                                <i class="fas fa-check"></i>
+                                            </span>
+                                        @else
+                                            <span class="badge bg-secondary" title="Pending">
+                                                <i class="fas fa-clock"></i>
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">{{ $index + 1 }}</td>
+                                    <td class="fw-semibold">{{ $detail->document_name }}</td>
+                                    <td>{{ $detail->date ? $detail->date->format('d-m-Y') : '-' }}</td>
+                                    <td>{{ $detail->document_number ?? '-' }}</td>
+                                    <td>{{ $detail->no_of_copies ?? '-' }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Uploaded Images Section -->
+                    @if($proformaInvoice->documents && $proformaInvoice->documents->count() > 0)
+                    <div class="mt-4 pt-4 border-top">
+                        <h5 class="fw-bold mb-3" style="color: #1f2937;">
+                            <i class="fas fa-images me-2"></i>Uploaded Images
+                        </h5>
+                        <div class="row g-3">
+                            @foreach($proformaInvoice->documents as $image)
+                            <div class="col-md-3">
+                                <div class="card border position-relative">
+                                    <img src="{{ Storage::url($image->file_path) }}" 
+                                         class="card-img-top" 
+                                         style="height: 150px; object-fit: cover; cursor: pointer;" 
+                                         alt="{{ $image->file_name }}"
+                                         onclick="window.open('{{ Storage::url($image->file_path) }}', '_blank')"
+                                         onerror="this.src='{{ asset('images/placeholder.png') }}'">
+                                    <div class="card-body p-2">
+                                        <small class="text-muted d-block text-truncate" title="{{ $image->file_name }}">
+                                            {{ $image->file_name }}
+                                        </small>
+                                        <small class="text-muted">{{ number_format($image->file_size / 1024, 2) }} KB</small>
+                                    </div>
+                                    <a href="{{ Storage::url($image->file_path) }}" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-outline-primary position-absolute top-0 end-0 m-2" 
+                                       title="View Full Size">
+                                        <i class="fas fa-expand"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </x-app-layout>

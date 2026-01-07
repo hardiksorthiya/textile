@@ -59,7 +59,7 @@ class PILayoutController extends Controller
             \App\Models\Seller::whereIn('id', $request->sellers)->update(['pi_layout_id' => $layout->id]);
         }
 
-        return redirect()->route('pi-layouts.index')
+        return redirect()->route('settings.pi-layouts')
             ->with('success', 'PI Layout created successfully.');
     }
 
@@ -69,6 +69,38 @@ class PILayoutController extends Controller
     public function show(PILayout $piLayout)
     {
         return view('pi-layouts.show', compact('piLayout'));
+    }
+
+    /**
+     * Preview the layout template
+     */
+    public function preview(PILayout $piLayout)
+    {
+        // Get a sample proforma invoice for preview, or create mock data
+        $sampleProformaInvoice = \App\Models\ProformaInvoice::with([
+            'contract.businessFirm',
+            'contract.state',
+            'contract.city',
+            'contract.area',
+            'seller.country',
+            'seller.bankDetails',
+            'creator',
+            'proformaInvoiceMachines.contractMachine.machineCategory',
+            'proformaInvoiceMachines.contractMachine.brand',
+            'proformaInvoiceMachines.contractMachine.machineModel',
+            'proformaInvoiceMachines.contractMachine.color',
+            'proformaInvoiceMachines.contractMachine.hsnCode',
+        ])->first();
+
+        // If no proforma invoice exists, create mock data
+        if (!$sampleProformaInvoice) {
+            $sampleProformaInvoice = $this->createMockProformaInvoice();
+        }
+
+        // Compile the template HTML with sample data
+        $previewHtml = $this->renderTemplate($piLayout->template_html, $sampleProformaInvoice);
+
+        return response($previewHtml)->header('Content-Type', 'text/html');
     }
 
     /**
@@ -117,7 +149,7 @@ class PILayoutController extends Controller
             \App\Models\Seller::whereIn('id', $request->sellers)->update(['pi_layout_id' => $piLayout->id]);
         }
 
-        return redirect()->route('pi-layouts.index')
+        return redirect()->route('settings.pi-layouts')
             ->with('success', 'PI Layout updated successfully.');
     }
 
@@ -133,7 +165,7 @@ class PILayoutController extends Controller
 
         $piLayout->delete();
 
-        return redirect()->route('pi-layouts.index')
+        return redirect()->route('settings.pi-layouts')
             ->with('success', 'PI Layout deleted successfully.');
     }
 
@@ -198,5 +230,92 @@ class PILayoutController extends Controller
     </table>
 </body>
 </html>';
+    }
+
+    /**
+     * Render template HTML with proforma invoice data
+     */
+    private function renderTemplate($templateHtml, $proformaInvoice)
+    {
+        try {
+            // Create a temporary view file
+            $tempPath = storage_path('app/temp_template_' . uniqid() . '.blade.php');
+            file_put_contents($tempPath, $templateHtml);
+
+            // Compile the view with data
+            $rendered = view()->file($tempPath, [
+                'proformaInvoice' => $proformaInvoice,
+                'seller' => $proformaInvoice->seller ?? null,
+                'machines' => $proformaInvoice->proformaInvoiceMachines ?? collect(),
+            ])->render();
+
+            // Clean up temporary file
+            @unlink($tempPath);
+
+            return $rendered;
+        } catch (\Exception $e) {
+            // Return error message if template fails to compile
+            return '<div class="alert alert-danger">Error rendering template: ' . htmlspecialchars($e->getMessage()) . '</div>';
+        }
+    }
+
+    /**
+     * Create mock proforma invoice for preview
+     */
+    private function createMockProformaInvoice()
+    {
+        $mock = new \stdClass();
+        
+        // Basic invoice data
+        $mock->id = 0;
+        $mock->proforma_invoice_number = 'PI-PREVIEW-001';
+        $mock->buyer_company_name = 'Sample Company Ltd.';
+        $mock->currency = 'USD';
+        $mock->total_amount = 50000.00;
+        $mock->created_at = now();
+        $mock->billing_address = "123 Sample Street\nSample City, Sample State 12345";
+        $mock->shipping_address = "123 Sample Street\nSample City, Sample State 12345";
+        $mock->notes = 'This is a preview with sample data.';
+        
+        // Mock contract
+        $mock->contract = new \stdClass();
+        $mock->contract->contract_number = 'CONTRACT-PREVIEW-001';
+        $mock->contract->buyer_name = 'Sample Customer';
+        $mock->contract->company_name = 'Sample Company Ltd.';
+        $mock->contract->businessFirm = (object)['name' => 'Sample Business Firm'];
+        $mock->contract->state = (object)['name' => 'Sample State'];
+        $mock->contract->city = (object)['name' => 'Sample City'];
+        $mock->contract->area = (object)['name' => 'Sample Area'];
+        $mock->contract->loading_terms = 'FOB';
+        $mock->contract->payment_terms = '30 days';
+        $mock->contract->contact_address = $mock->billing_address;
+        
+        // Mock seller
+        $mock->seller = new \stdClass();
+        $mock->seller->seller_name = 'Sample Seller';
+        $mock->seller->address = 'Seller Address, Seller City';
+        $mock->seller->country = (object)['name' => 'CHINA'];
+        $mock->seller->bankDetails = collect([]);
+        
+        // Mock creator
+        $mock->creator = new \stdClass();
+        $mock->creator->name = 'System User';
+        
+        // Mock machines collection
+        $machine = new \stdClass();
+        $machine->id = 1;
+        $machine->quantity = 2;
+        $machine->amount = 25000.00;
+        
+        $machine->contractMachine = new \stdClass();
+        $machine->contractMachine->machineCategory = (object)['name' => 'Sample Machine Category'];
+        $machine->contractMachine->brand = (object)['name' => 'Sample Brand'];
+        $machine->contractMachine->machineModel = (object)['model_no' => 'MODEL-001'];
+        $machine->contractMachine->color = (object)['name' => 'Red'];
+        $machine->contractMachine->hsnCode = (object)['name' => 'HSN123456'];
+        
+        $mock->proformaInvoiceMachines = collect([$machine]);
+        
+        return $mock;
     }
 }

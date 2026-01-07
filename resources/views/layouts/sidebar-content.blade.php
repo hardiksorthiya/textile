@@ -13,151 +13,16 @@
 </div>
 
 <!-- Navigation Menu -->
-<nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-    <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg transition-colors {{ request()->routeIs('dashboard') ? 'sidebar-active' : 'sidebar-link' }}">
+<nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+    <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors {{ request()->routeIs('dashboard') ? 'sidebar-active' : 'sidebar-link' }}">
         <i class="fas fa-chart-line w-5 mr-3"></i>
         <span>Dashboard</span>
     </a>
-
-    @canany(['view users', 'create users', 'edit users', 'delete users', 'view roles', 'create roles', 'edit roles', 'delete roles'])
-    <div x-data="{ open: {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
-            <div class="flex items-center">
-                <i class="fas fa-users w-5 mr-3"></i>
-                <span>Team</span>
-            </div>
-            <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
-        </button>
-        <div x-show="open" x-collapse class="ml-8 space-y-1">
-            @can('view users')
-            <a href="{{ route('users.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('users.*') && !request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-list w-4 mr-2"></i>
-                <span>Team List</span>
-            </a>
-            @endcan
-            @canany(['view roles', 'create roles', 'edit roles', 'delete roles'])
-            <a href="{{ route('roles.create') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-user-tag w-4 mr-2"></i>
-                <span>Role Create</span>
-            </a>
-            @endcanany
-        </div>
-    </div>
-    @endcanany
-
-    @hasrole('Admin|Super Admin')
-    <div x-data="{ open: {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'sidebar-active' : '' }}">
-            <div class="flex items-center">
-                <i class="fas fa-industry w-5 mr-3"></i>
-                <span class="fw-semibold">Machine</span>
-            </div>
-            <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
-        </button>
-        <div x-show="open" x-collapse class="ml-8 space-y-1">
-            <a href="{{ route('machine-categories.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-categories.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-list w-4 mr-2"></i>
-                <span>Category</span>
-            </a>
-            <a href="{{ route('brands.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('brands.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-tags w-4 mr-2"></i>
-                <span>Brand</span>
-            </a>
-            <a href="{{ route('machine-models.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-models.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-cog w-4 mr-2"></i>
-                <span>Machine Model</span>
-            </a>
-            <a href="{{ route('machine-sizes.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-sizes.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-ruler w-4 mr-2"></i>
-                <span>Machine Size</span>
-            </a>
-            <a href="{{ route('flange-sizes.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('flange-sizes.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-compress-arrows-alt w-4 mr-2"></i>
-                <span>Flange Size</span>
-            </a>
-            <a href="{{ route('feeders.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('feeders.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-box w-4 mr-2"></i>
-                <span>Feeder</span>
-            </a>
-            <a href="{{ route('machine-hooks.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-hooks.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-link w-4 mr-2"></i>
-                <span>Machine Hook</span>
-            </a>
-            <a href="{{ route('colors.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('colors.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-palette w-4 mr-2"></i>
-                <span>Color</span>
-            </a>
-            <a href="{{ route('machine-nozzles.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-nozzles.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-spray-can w-4 mr-2"></i>
-                <span>Machine Nozzle</span>
-            </a>
-            <a href="{{ route('machine-dropins.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-dropins.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-tint-droplet w-4 mr-2"></i>
-                <span>Machine Dropin</span>
-            </a>
-            <a href="{{ route('machine-beams.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-beams.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-chart-line w-4 mr-2"></i>
-                <span>Machine Beam</span>
-            </a>
-            <a href="{{ route('machine-cloth-rollers.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-cloth-rollers.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-rotate w-4 mr-2"></i>
-                <span>Machine Cloth Roller</span>
-            </a>
-            <a href="{{ route('machine-softwares.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-softwares.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-code w-4 mr-2"></i>
-                <span>Machine Software</span>
-            </a>
-            <a href="{{ route('hsn-codes.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('hsn-codes.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-hashtag w-4 mr-2"></i>
-                <span>HSN Code</span>
-            </a>
-            <a href="{{ route('wirs.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('wirs.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-file-invoice w-4 mr-2"></i>
-                <span>WIR</span>
-            </a>
-            <a href="{{ route('machine-shafts.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-shafts.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-circle-notch w-4 mr-2"></i>
-                <span>Machine Shaft</span>
-            </a>
-            <a href="{{ route('machine-levers.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-levers.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-toggle-on w-4 mr-2"></i>
-                <span>Machine Lever</span>
-            </a>
-            <a href="{{ route('machine-chains.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-chains.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-link w-4 mr-2"></i>
-                <span>Machine Chain</span>
-            </a>
-            <a href="{{ route('machine-heald-wires.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-heald-wires.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-slash w-4 mr-2"></i>
-                <span>Machine Heald Wire</span>
-            </a>
-            <a href="{{ route('machine-e-reads.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-e-reads.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-book-reader w-4 mr-2"></i>
-                <span>Machine E-Read</span>
-            </a>
-            <a href="{{ route('delivery-terms.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('delivery-terms.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-shipping-fast w-4 mr-2"></i>
-                <span>Delivery Term</span>
-            </a>
-            <a href="{{ route('sellers.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('sellers.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-user-tie w-4 mr-2"></i>
-                <span>Seller</span>
-            </a>
-            <a href="{{ route('countries.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('countries.*') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-globe w-4 mr-2"></i>
-                <span>Seller country</span>
-            </a>
-            <a href="{{ route('settings.contract-details') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'sidebar-active' : '' }}">
-                <i class="fas fa-cog w-4 mr-2"></i>
-                <span>Other Contract Details</span>
-            </a>
-        </div>
-    </div>
-    @endhasrole
+  
 
     @canany(['view leads', 'create leads', 'edit leads', 'delete leads', 'convert contract'])
-    <div x-data="{ open: {{ request()->routeIs('leads.*') || request()->routeIs('businesses.*') || request()->routeIs('states.*') || request()->routeIs('cities.*') || request()->routeIs('areas.*') || request()->routeIs('statuses.*') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('leads.*') || request()->routeIs('businesses.*') || request()->routeIs('states.*') || request()->routeIs('cities.*') || request()->routeIs('areas.*') || request()->routeIs('statuses.*') ? 'sidebar-active' : '' }}">
+    <div x-data="{ open: {{ request()->routeIs('leads.*') || request()->routeIs('businesses.*') || request()->routeIs('states.*') || request()->routeIs('cities.*') || request()->routeIs('areas.*') || request()->routeIs('statuses.*') ? 'true' : 'false' }} }" class="space-y-1">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('leads.*') || request()->routeIs('businesses.*') || request()->routeIs('states.*') || request()->routeIs('cities.*') || request()->routeIs('areas.*') || request()->routeIs('statuses.*') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
                 <i class="fas fa-user-friends w-5 mr-3"></i>
                 <span>Leads</span>
@@ -166,29 +31,29 @@
         </button>
         <div x-show="open" x-collapse class="ml-8 space-y-1">
             @can('view leads')
-            <a href="{{ route('leads.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('leads.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('leads.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('leads.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-list w-4 mr-2"></i>
                 <span>List Leads</span>
             </a>
             @endcan
             @hasrole('Admin|Super Admin')
-            <a href="{{ route('businesses.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('businesses.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('businesses.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('businesses.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-building w-4 mr-2"></i>
                 <span>Business</span>
             </a>
-            <a href="{{ route('states.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('states.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('states.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('states.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-map w-4 mr-2"></i>
                 <span>State</span>
             </a>
-            <a href="{{ route('cities.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('cities.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('cities.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('cities.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-city w-4 mr-2"></i>
                 <span>City</span>
             </a>
-            <a href="{{ route('areas.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('areas.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('areas.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('areas.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-map-marker-alt w-4 mr-2"></i>
                 <span>Area</span>
             </a>
-            <a href="{{ route('statuses.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('statuses.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('statuses.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('statuses.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-info-circle w-4 mr-2"></i>
                 <span>Status</span>
             </a>
@@ -198,15 +63,22 @@
     @endcanany
 
     @canany(['view contract approvals', 'approve contracts', 'reject contracts'])
-    <a href="{{ route('contracts.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.index') || request()->routeIs('contracts.edit') || request()->routeIs('contracts.signature') ? 'sidebar-active' : '' }}">
+    <a href="{{ route('contracts.index') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.index') || request()->routeIs('contracts.edit') || request()->routeIs('contracts.signature') ? 'sidebar-active' : '' }}">
         <i class="fas fa-file-contract w-5 mr-3"></i>
         <span>Contracts</span>
     </a>
     @endcanany
 
+    @can('view customers')
+    <a href="{{ route('customers.index') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('customers.*') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-user-check w-5 mr-3"></i>
+        <span>Customers</span>
+    </a>
+    @endcan
+
     @canany(['view proforma invoices', 'create proforma invoices', 'edit proforma invoices', 'delete proforma invoices', 'view contract approvals', 'convert contract'])
-    <div x-data="{ open: {{ request()->routeIs('proforma-invoices.*') || request()->routeIs('contracts.over-invoice') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.*') || request()->routeIs('contracts.over-invoice') ? 'sidebar-active' : '' }}">
+    <div x-data="{ open: {{ request()->routeIs('proforma-invoices.*') || request()->routeIs('contracts.over-invoice') ? 'true' : 'false' }} }" class="space-y-1">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.*') || request()->routeIs('contracts.over-invoice') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
                 <i class="fas fa-shopping-cart w-5 mr-3"></i>
                 <span>Sale</span>
@@ -215,57 +87,115 @@
         </button>
         <div x-show="open" x-collapse class="ml-8 space-y-1">
             @can('create proforma invoices')
-            <a href="{{ route('proforma-invoices.create') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.create') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('proforma-invoices.create') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.create') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-plus-circle w-4 mr-2"></i>
                 <span>Create PI</span>
             </a>
             @endcan
             @can('view proforma invoices')
-            <a href="{{ route('proforma-invoices.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.index') || request()->routeIs('proforma-invoices.show') || request()->routeIs('proforma-invoices.edit') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('proforma-invoices.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.index') || request()->routeIs('proforma-invoices.show') || request()->routeIs('proforma-invoices.edit') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-list w-4 mr-2"></i>
                 <span>PI List</span>
             </a>
             @endcan
             @canany(['view contract approvals', 'convert contract'])
-            <a href="{{ route('contracts.over-invoice') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.over-invoice') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('contracts.over-invoice') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.over-invoice') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-exclamation-triangle w-4 mr-2"></i>
                 <span>Over Invoice</span>
             </a>
             @endcanany
+            @can('view proforma invoices')
+            <a href="{{ route('proforma-invoices.delivery-details-index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('proforma-invoices.delivery-details-index') || request()->routeIs('proforma-invoices.delivery-details') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-truck w-4 mr-2"></i>
+                <span>Delivery Details</span>
+            </a>
+            @endcan
+            @canany(['view contract approvals', 'convert contract'])
+            <a href="{{ route('machine-statuses.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-statuses.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-tasks w-4 mr-2"></i>
+                <span>Status</span>
+            </a>
+            @endcanany
+
         </div>
     </div>
     @endcanany
 
-    @can('view customers')
-    <a href="{{ route('customers.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('customers.*') ? 'sidebar-active' : '' }}">
-        <i class="fas fa-user-check w-5 mr-3"></i>
-        <span>Customers</span>
-    </a>
-    @endcan
+    @canany(['view proforma invoices', 'edit proforma invoices'])
+    <div x-data="{ open: {{ request()->routeIs('pre-erection.*') || request()->routeIs('ms-unloading-images.*') || request()->routeIs('damage-details.*') || request()->routeIs('serial-numbers.*') || request()->routeIs('machine-erection.*') || request()->routeIs('ia-fitting.*') ? 'true' : 'false' }} }" class="space-y-1">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('pre-erection.*') || request()->routeIs('ms-unloading-images.*') || request()->routeIs('damage-details.*') || request()->routeIs('serial-numbers.*') || request()->routeIs('machine-erection.*') || request()->routeIs('ia-fitting.*') ? 'sidebar-active' : '' }}">
+            <div class="flex">
+                <i class="fas fa-truck-loading w-5 mr-3"></i>
+                <span class="text-start">MS Unloading</span>
+            </div>
+            <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
+        </button>
+        <div x-show="open" x-collapse class="ml-8 space-y-1">
+            <a href="{{ route('pre-erection.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('pre-erection.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-tools w-4 mr-2"></i>
+                <span>Pre Erection</span>
+            </a>
+            <a href="{{ route('ms-unloading-images.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('ms-unloading-images.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-images w-4 mr-2"></i>
+                <span>Image Uploading</span>
+            </a>
+            <a href="{{ route('damage-details.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('damage-details.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-exclamation-triangle w-4 mr-2"></i>
+                <span>Damage</span>
+            </a>
+            <a href="{{ route('serial-numbers.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('serial-numbers.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-hashtag w-4 mr-2"></i>
+                <span>Serial Number</span>
+            </a>
+            <a href="{{ route('machine-erection.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-erection.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-cogs w-4 mr-2"></i>
+                <span>Machine Erection</span>
+            </a>
+            <a href="{{ route('ia-fitting.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('ia-fitting.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-wrench w-4 mr-2"></i>
+                <span>IA Fitting</span>
+            </a>
+        </div>
+    </div>
+    @endcanany
+
+    
 
     @canany(['view proforma invoices', 'view contract approvals'])
-    <a href="{{ route('payments.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('payments.*') ? 'sidebar-active' : '' }}">
+    <a href="{{ route('payments.index') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('payments.*') ? 'sidebar-active' : '' }}">
         <i class="fas fa-money-bill-wave w-5 mr-3"></i>
         <span>Payment</span>
     </a>
     @endcanany
 
     @canany(['view proforma invoices', 'view contract approvals'])
-    <a href="{{ route('purchase-orders.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('purchase-orders.*') ? 'sidebar-active' : '' }}">
+    <a href="{{ route('purchase-orders.index') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('purchase-orders.*') ? 'sidebar-active' : '' }}">
         <i class="fas fa-shopping-bag w-5 mr-3"></i>
         <span>Purchase Order</span>
     </a>
     @endcanany
 
+    @hasrole('Admin|Super Admin')
+    <a href="{{ route('spares.index') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('spares.*') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-warehouse w-5 mr-3"></i>
+        <span>Inventory</span>
+    </a>
+    @endhasrole
+
     @can('view reports')
-    <a href="{{ route('reports.index') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('reports.*') ? 'sidebar-active' : '' }}">
+    <a href="{{ route('reports.index') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('reports.*') ? 'sidebar-active' : '' }}">
         <i class="fas fa-chart-bar w-5 mr-3"></i>
         <span>Reports</span>
     </a>
     @endcan
 
+    <a href="{{ route('tasks.index') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('tasks.*') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-tasks w-5 mr-3"></i>
+        <span>Tasks</span>
+    </a>
+
     @can('view contract approvals')
-    <a href="{{ route('contracts.pending-approval') }}" class="flex items-center px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.pending-approval') || request()->routeIs('contracts.approve') || request()->routeIs('contracts.reject') ? 'sidebar-active' : '' }}">
+    <a href="{{ route('contracts.pending-approval') }}" class="flex items-center px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('contracts.pending-approval') || request()->routeIs('contracts.approve') || request()->routeIs('contracts.reject') ? 'sidebar-active' : '' }}">
         <i class="fas fa-check-circle w-5 mr-3"></i>
         <span>Contract Approvals</span>
         @php
@@ -277,9 +207,146 @@
     </a>
     @endcan
 
+    
+    @canany(['view users', 'create users', 'edit users', 'delete users', 'view roles', 'create roles', 'edit roles', 'delete roles'])
+    <div x-data="{ open: {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'true' : 'false' }} }" class="space-y-1">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
+            <div class="flex items-center">
+                <i class="fas fa-users w-5 mr-3"></i>
+                <span>Team</span>
+            </div>
+            <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
+        </button>
+        <div x-show="open" x-collapse class="ml-8 space-y-1">
+            @can('view users')
+            <a href="{{ route('users.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('users.*') && !request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-list w-4 mr-2"></i>
+                <span>Team List</span>
+            </a>
+            @endcan
+            @canany(['view roles', 'create roles', 'edit roles', 'delete roles'])
+            <a href="{{ route('roles.create') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('roles.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-user-tag w-4 mr-2"></i>
+                <span>Role Create</span>
+            </a>
+            @endcanany
+        </div>
+    </div>
+    @endcanany
+
+    @hasrole('Admin|Super Admin')
+    <div x-data="{ open: {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'true' : 'false' }} }" class="space-y-1">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-categories.*') || request()->routeIs('sellers.*') || request()->routeIs('countries.*') || request()->routeIs('brands.*') || request()->routeIs('machine-models.*') || request()->routeIs('machine-sizes.*') || request()->routeIs('flange-sizes.*') || request()->routeIs('feeders.*') || request()->routeIs('machine-hooks.*') || request()->routeIs('colors.*') || request()->routeIs('machine-nozzles.*') || request()->routeIs('machine-dropins.*') || request()->routeIs('machine-beams.*') || request()->routeIs('machine-cloth-rollers.*') || request()->routeIs('machine-softwares.*') || request()->routeIs('hsn-codes.*') || request()->routeIs('wirs.*') || request()->routeIs('machine-shafts.*') || request()->routeIs('machine-levers.*') || request()->routeIs('machine-chains.*') || request()->routeIs('machine-heald-wires.*') || request()->routeIs('machine-e-reads.*') || request()->routeIs('delivery-terms.*') || request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'sidebar-active' : '' }}">
+            <div class="flex items-center">
+                <i class="fas fa-industry w-5 mr-3"></i>
+                <span class="fw-semibold">Machine</span>
+            </div>
+            <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
+        </button>
+        <div x-show="open" x-collapse class="ml-8 space-y-1">
+            <a href="{{ route('machine-categories.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-categories.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-list w-4 mr-2"></i>
+                <span>Category</span>
+            </a>
+            <a href="{{ route('brands.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('brands.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-tags w-4 mr-2"></i>
+                <span>Brand</span>
+            </a>
+            <a href="{{ route('machine-models.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-models.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-cog w-4 mr-2"></i>
+                <span>Machine Model</span>
+            </a>
+            <a href="{{ route('machine-sizes.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-sizes.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-ruler w-4 mr-2"></i>
+                <span>Machine Size</span>
+            </a>
+            <a href="{{ route('flange-sizes.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('flange-sizes.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-compress-arrows-alt w-4 mr-2"></i>
+                <span>Flange Size</span>
+            </a>
+            <a href="{{ route('feeders.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('feeders.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-box w-4 mr-2"></i>
+                <span>Feeder</span>
+            </a>
+            <a href="{{ route('machine-hooks.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-hooks.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-link w-4 mr-2"></i>
+                <span>Machine Hook</span>
+            </a>
+            <a href="{{ route('colors.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('colors.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-palette w-4 mr-2"></i>
+                <span>Color</span>
+            </a>
+            <a href="{{ route('machine-nozzles.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-nozzles.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-spray-can w-4 mr-2"></i>
+                <span>Machine Nozzle</span>
+            </a>
+            <a href="{{ route('machine-dropins.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-dropins.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-tint-droplet w-4 mr-2"></i>
+                <span>Machine Dropin</span>
+            </a>
+            <a href="{{ route('machine-beams.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-beams.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-chart-line w-4 mr-2"></i>
+                <span>Machine Beam</span>
+            </a>
+            <a href="{{ route('machine-cloth-rollers.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-cloth-rollers.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-rotate w-4 mr-2"></i>
+                <span>Machine Cloth Roller</span>
+            </a>
+            <a href="{{ route('machine-softwares.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-softwares.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-code w-4 mr-2"></i>
+                <span>Machine Software</span>
+            </a>
+            <a href="{{ route('hsn-codes.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('hsn-codes.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-hashtag w-4 mr-2"></i>
+                <span>HSN Code</span>
+            </a>
+            <a href="{{ route('wirs.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('wirs.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-file-invoice w-4 mr-2"></i>
+                <span>WIR</span>
+            </a>
+            <a href="{{ route('machine-shafts.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-shafts.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-circle-notch w-4 mr-2"></i>
+                <span>Machine Shaft</span>
+            </a>
+            <a href="{{ route('machine-levers.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-levers.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-toggle-on w-4 mr-2"></i>
+                <span>Machine Lever</span>
+            </a>
+            <a href="{{ route('machine-chains.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-chains.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-link w-4 mr-2"></i>
+                <span>Machine Chain</span>
+            </a>
+            <a href="{{ route('machine-heald-wires.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-heald-wires.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-slash w-4 mr-2"></i>
+                <span>Machine Heald Wire</span>
+            </a>
+            <a href="{{ route('machine-e-reads.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('machine-e-reads.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-book-reader w-4 mr-2"></i>
+                <span>Machine E-Read</span>
+            </a>
+            <a href="{{ route('delivery-terms.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('delivery-terms.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-shipping-fast w-4 mr-2"></i>
+                <span>Delivery Term</span>
+            </a>
+            <a href="{{ route('sellers.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('sellers.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-user-tie w-4 mr-2"></i>
+                <span>Seller</span>
+            </a>
+            <a href="{{ route('countries.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('countries.*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-globe w-4 mr-2"></i>
+                <span>Seller country</span>
+            </a>
+            <a href="{{ route('settings.contract-details') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.contract-details') || request()->routeIs('settings.update-contract-details') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-cog w-4 mr-2"></i>
+                <span>Other Contract Details</span>
+            </a>
+        </div>
+    </div>
+    @endhasrole
+
     @canany(['view settings', 'edit settings'])
-    <div x-data="{ open: {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') || request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'true' : 'false' }} }" class="space-y-2">
-        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') || request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'sidebar-active' : '' }}">
+    <div x-data="{ open: {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') || request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'true' : 'false' }} }" class="space-y-1">
+        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.edit') || request()->routeIs('settings.update') || request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') || request()->routeIs('admin.*') || request()->routeIs('business-firms.*') || request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'sidebar-active' : '' }}">
             <div class="flex items-center">
                 <i class="fas fa-cog w-5 mr-3"></i>
                 <span>Settings</span>
@@ -287,19 +354,19 @@
             <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
         </button>
         <div x-show="open" x-collapse class="ml-8 space-y-1">
-            <a href="{{ route('settings.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.edit') || (request()->routeIs('settings.update') && !request()->routeIs('settings.pi-layouts')) ? 'sidebar-active' : '' }}">
+            <a href="{{ route('settings.edit') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.edit') || (request()->routeIs('settings.update') && !request()->routeIs('settings.pi-layouts')) ? 'sidebar-active' : '' }}">
                 <i class="fas fa-cog w-4 mr-2"></i>
                 <span>General Settings</span>
             </a>
-            <a href="{{ route('settings.pi-layouts') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('settings.pi-layouts') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.pi-layouts') || request()->routeIs('pi-layouts.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-file-invoice w-4 mr-2"></i>
                 <span>Layout of Proforma</span>
             </a>
-            <a href="{{ route('business-firms.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('business-firms.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('business-firms.index') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('business-firms.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-briefcase w-4 mr-2"></i>
                 <span>Business Firm</span>
             </a>
-            <a href="{{ route('settings.port-of-destinations') }}" class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'sidebar-active' : '' }}">
+            <a href="{{ route('settings.port-of-destinations') }}" class="flex items-center px-4 py-1.5 text-sm text-gray-600 rounded-lg sidebar-link transition-colors {{ request()->routeIs('settings.port-of-destinations') || request()->routeIs('port-of-destinations.*') ? 'sidebar-active' : '' }}">
                 <i class="fas fa-anchor w-4 mr-2"></i>
                 <span>Port of Destination</span>
             </a>
@@ -307,23 +374,5 @@
     </div>
     @endcanany
 </nav>
-
-<!-- Mobile App Section -->
-<div class="p-4 border-t border-gray-200 bg-gray-50 hidden lg:block">
-    <div class="text-center mb-3">
-        <i class="fas fa-mobile-alt text-4xl mb-2" style="color: var(--primary-color);"></i>
-        <p class="text-sm font-semibold text-gray-700">Get Mobile App</p>
-    </div>
-    <div class="flex justify-center space-x-2">
-        <a href="#" class="flex items-center justify-center w-24 h-8 bg-black text-white rounded text-xs">
-            <i class="fab fa-google-play mr-1"></i>
-            <span>Play</span>
-        </a>
-        <a href="#" class="flex items-center justify-center w-24 h-8 bg-black text-white rounded text-xs">
-            <i class="fab fa-apple mr-1"></i>
-            <span>App Store</span>
-        </a>
-    </div>
-</div>
 
 

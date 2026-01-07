@@ -39,6 +39,7 @@ class SellerController extends Controller
             'pi_short_name' => 'required|string|max:255',
             'gst_no' => 'nullable|string|max:255',
             'signature' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'bank_details' => 'nullable|array',
             'bank_details.*.bank_name' => 'required_with:bank_details|string|max:255',
             'bank_details.*.account_number' => 'required_with:bank_details|string|max:255',
@@ -53,6 +54,11 @@ class SellerController extends Controller
             $signaturePath = $request->file('signature')->store('signatures', 'public');
         }
 
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('seller-logos', 'public');
+        }
+
         $seller = Seller::create([
             'country_id' => $request->country_id,
             'seller_name' => $request->seller_name,
@@ -62,6 +68,7 @@ class SellerController extends Controller
             'pi_short_name' => $request->pi_short_name,
             'gst_no' => $request->gst_no,
             'signature' => $signaturePath,
+            'logo' => $logoPath,
         ]);
 
         // Attach categories
@@ -104,6 +111,7 @@ class SellerController extends Controller
             'pi_short_name' => 'required|string|max:255',
             'gst_no' => 'nullable|string|max:255',
             'signature' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'bank_details' => 'nullable|array',
             'bank_details.*.bank_name' => 'required_with:bank_details|string|max:255',
             'bank_details.*.account_number' => 'required_with:bank_details|string|max:255',
@@ -122,6 +130,15 @@ class SellerController extends Controller
             $signaturePath = $request->file('signature')->store('signatures', 'public');
         }
 
+        $logoPath = $seller->logo;
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($seller->logo) {
+                Storage::disk('public')->delete($seller->logo);
+            }
+            $logoPath = $request->file('logo')->store('seller-logos', 'public');
+        }
+
         $seller->update([
             'country_id' => $request->country_id,
             'seller_name' => $request->seller_name,
@@ -131,6 +148,7 @@ class SellerController extends Controller
             'pi_short_name' => $request->pi_short_name,
             'gst_no' => $request->gst_no,
             'signature' => $signaturePath,
+            'logo' => $logoPath,
         ]);
 
         // Sync categories

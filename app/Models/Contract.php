@@ -109,4 +109,14 @@ class Contract extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function machineStatus()
+    {
+        return $this->hasOne(MachineStatus::class);
+    }
+
+    public function proformaInvoices()
+    {
+        return $this->hasMany(ProformaInvoice::class);
+    }
 }

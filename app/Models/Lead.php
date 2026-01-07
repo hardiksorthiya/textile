@@ -20,6 +20,7 @@ class Lead extends Model
         'quantity',
         'status_id',
         'brand_id',
+        'brand_name',
         'machine_quantity',
         'running_since',
         'needs_scheduling',
@@ -71,5 +72,10 @@ class Lead extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
     }
 }

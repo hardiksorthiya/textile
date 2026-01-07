@@ -5,6 +5,11 @@
             <p class="text-muted mb-0">Contract: {{ $contract->contract_number }}</p>
         </div>
         <div class="d-flex gap-2">
+            @canany(['view contract approvals', 'convert contract'])
+            <a href="{{ route('machine-statuses.create', ['contract_id' => $contract->id]) }}" class="btn btn-primary">
+                <i class="fas fa-tasks me-2"></i>Status
+            </a>
+            @endcanany
             <a href="{{ route('contracts.download-pdf', $contract) }}" class="btn btn-success" target="_blank">
                 <i class="fas fa-file-pdf me-2"></i>Download PDF
             </a>
@@ -125,6 +130,9 @@
                                     <div class="row g-2 small">
                                         @if($machine->brand)
                                         <div class="col-md-6"><strong>Brand:</strong> {{ $machine->brand->name }}</div>
+                                        @endif
+                                        @if($machine->seller)
+                                        <div class="col-md-6"><strong>Machine Seller:</strong> {{ $machine->seller->seller_name }}</div>
                                         @endif
                                         @if($machine->machineModel)
                                         <div class="col-md-6"><strong>Model:</strong> {{ $machine->machineModel->model_no }}</div>

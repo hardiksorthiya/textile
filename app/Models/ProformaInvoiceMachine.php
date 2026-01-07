@@ -148,4 +148,9 @@ class ProformaInvoiceMachine extends Model
     {
         return $this->belongsTo(DeliveryTerm::class);
     }
+
+    public function serialNumbers()
+    {
+        return $this->hasMany(SerialNumber::class);
+    }
 }

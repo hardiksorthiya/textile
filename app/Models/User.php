@@ -75,4 +75,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Contract::class, 'created_by');
     }
+
+    /**
+     * Get the proforma invoices created by this user.
+     */
+    public function createdProformaInvoices()
+    {
+        return $this->hasMany(ProformaInvoice::class, 'created_by');
+    }
 }

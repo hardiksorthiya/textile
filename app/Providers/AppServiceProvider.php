@@ -27,5 +27,15 @@ class AppServiceProvider extends ServiceProvider
 
         $settings = Schema::hasTable('settings') ? Setting::first() : null;
         View::share('appSettings', $settings);
+
+        // Explicit route model binding for damage details
+        \Illuminate\Support\Facades\Route::bind('damageDetail', function ($value) {
+            return \App\Models\DamageDetail::findOrFail($value);
+        });
+        
+        // Explicit route model binding for damage images
+        \Illuminate\Support\Facades\Route::bind('damageImage', function ($value) {
+            return \App\Models\DamageImage::findOrFail($value);
+        });
     }
 }

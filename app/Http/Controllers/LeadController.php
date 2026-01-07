@@ -14,6 +14,7 @@ use App\Models\BusinessFirm;
 use App\Models\Contract;
 use App\Models\ContractMachine;
 use App\Models\MachineModel;
+use App\Models\Seller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 
@@ -175,7 +176,7 @@ class LeadController extends Controller
         if ($request->type === 'new') {
             $leadData['business_id'] = $request->business_id;
         } else {
-            $leadData['brand_id'] = $request->brand_id;
+            $leadData['brand_name'] = $request->brand_name;
             $leadData['machine_quantity'] = $request->machine_quantity;
             $leadData['running_since'] = $request->running_since;
         }
@@ -187,6 +188,24 @@ class LeadController extends Controller
 
         // Attach categories
         $lead->machineCategories()->attach($request->categories);
+
+        // Handle task creation for scheduled meetings
+        $status = Status::find($request->status_id);
+        if ($status && $status->requires_scheduling && $request->needs_scheduling && $request->scheduled_date && $request->scheduled_time) {
+            // Combine date and time
+            $scheduledDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $request->scheduled_date . ' ' . $request->scheduled_time);
+            
+            // Create task
+            \App\Models\Task::create([
+                'user_id' => auth()->id(),
+                'lead_id' => $lead->id,
+                'title' => 'Meeting with ' . $lead->name,
+                'description' => 'Scheduled meeting for lead: ' . $lead->name . ' (Phone: ' . $lead->phone_number . ')',
+                'status' => 'pending',
+                'due_date' => $scheduledDateTime->format('Y-m-d'),
+                'priority' => 2, // High priority for meetings
+            ]);
+        }
 
         return redirect()->route('leads.index')
             ->with('success', 'Lead created successfully.');
@@ -247,7 +266,7 @@ class LeadController extends Controller
         if ($request->type === 'new') {
             $rules['business_id'] = 'required|exists:businesses,id';
         } else {
-            $rules['brand_id'] = 'required|exists:brands,id';
+            $rules['brand_name'] = 'required|string|max:255';
             $rules['machine_quantity'] = 'required|integer|min:1';
             $rules['running_since'] = 'required|string|max:255';
         }
@@ -271,11 +290,13 @@ class LeadController extends Controller
         if ($request->type === 'new') {
             $leadData['business_id'] = $request->business_id;
             $leadData['brand_id'] = null;
+            $leadData['brand_name'] = null;
             $leadData['machine_quantity'] = null;
             $leadData['running_since'] = null;
         } else {
             $leadData['business_id'] = null;
-            $leadData['brand_id'] = $request->brand_id;
+            $leadData['brand_id'] = null;
+            $leadData['brand_name'] = $request->brand_name;
             $leadData['machine_quantity'] = $request->machine_quantity;
             $leadData['running_since'] = $request->running_since;
         }
@@ -284,6 +305,44 @@ class LeadController extends Controller
 
         // Sync categories
         $lead->machineCategories()->sync($request->categories);
+
+        // Handle task creation/update for scheduled meetings
+        $status = \App\Models\Status::find($request->status_id);
+        if ($status && $status->requires_scheduling && $request->needs_scheduling && $request->scheduled_date && $request->scheduled_time) {
+            // Combine date and time
+            $scheduledDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $request->scheduled_date . ' ' . $request->scheduled_time);
+            
+            // Check if task already exists for this lead
+            $existingTask = \App\Models\Task::where('lead_id', $lead->id)->first();
+            
+            if ($existingTask) {
+                // Update existing task
+                $existingTask->update([
+                    'title' => 'Meeting with ' . $lead->name,
+                    'description' => 'Scheduled meeting for lead: ' . $lead->name . ' (Phone: ' . $lead->phone_number . ')',
+                    'status' => 'pending',
+                    'due_date' => $scheduledDateTime->format('Y-m-d'),
+                    'priority' => 2, // High priority for meetings
+                ]);
+            } else {
+                // Create new task
+                \App\Models\Task::create([
+                    'user_id' => $lead->created_by ?? auth()->id(),
+                    'lead_id' => $lead->id,
+                    'title' => 'Meeting with ' . $lead->name,
+                    'description' => 'Scheduled meeting for lead: ' . $lead->name . ' (Phone: ' . $lead->phone_number . ')',
+                    'status' => 'pending',
+                    'due_date' => $scheduledDateTime->format('Y-m-d'),
+                    'priority' => 2, // High priority for meetings
+                ]);
+            }
+        } else {
+            // If scheduling is disabled or status doesn't require scheduling, mark existing task as completed if exists
+            $existingTask = \App\Models\Task::where('lead_id', $lead->id)->first();
+            if ($existingTask) {
+                $existingTask->update(['status' => 'completed']);
+            }
+        }
 
         return redirect()->route('leads.index')
             ->with('success', 'Lead updated successfully.');
@@ -388,6 +447,7 @@ class LeadController extends Controller
             'machines.*.machine_category_id' => 'required|exists:machine_categories,id',
             'machines.*.brand_id' => 'nullable|exists:brands,id',
             'machines.*.machine_model_id' => 'nullable|exists:machine_models,id',
+            'machines.*.seller_id' => 'nullable|exists:sellers,id',
             'machines.*.quantity' => 'required|integer|min:1',
             'machines.*.amount' => 'required|numeric|min:0',
             'machines.*.description' => 'nullable|string',
@@ -470,6 +530,7 @@ class LeadController extends Controller
                 'machine_category_id' => $machineData['machine_category_id'],
                 'brand_id' => $machineData['brand_id'] ?? null,
                 'machine_model_id' => $machineData['machine_model_id'] ?? null,
+                'seller_id' => $machineData['seller_id'] ?? null,
                 'quantity' => $quantity,
                 'amount' => $amount,
                 'machine_total' => $machineTotal,
@@ -499,6 +560,7 @@ class LeadController extends Controller
                 'machine_category_id' => $machineData['machine_category_id'],
                 'brand_id' => $machineData['brand_id'] ?? null,
                 'machine_model_id' => $machineData['machine_model_id'] ?? null,
+                'seller_id' => $machineData['seller_id'] ?? null,
                 'quantity' => $quantity,
                 'amount' => $amount,
                 'description' => $machineData['description'] ?? null,
@@ -548,9 +610,17 @@ class LeadController extends Controller
             'machineHealdWires'
         ])->findOrFail($category_id);
 
+        // Get sellers that have this machine category
+        $sellers = Seller::whereHas('machineCategories', function($query) use ($category_id) {
+            $query->where('machine_categories.id', $category_id);
+        })->orderBy('seller_name')->get();
+
         return response()->json([
             'brands' => $category->brands->map(function($brand) {
                 return ['id' => $brand->id, 'name' => $brand->name];
+            })->values(),
+            'sellers' => $sellers->map(function($seller) {
+                return ['id' => $seller->id, 'seller_name' => $seller->seller_name];
             })->values(),
             'feeders' => $category->feeders->map(function($feeder) {
                 return [

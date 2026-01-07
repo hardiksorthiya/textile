@@ -62,4 +62,54 @@ class ProformaInvoice extends Model
     {
         return $this->belongsTo(Seller::class);
     }
+
+    public function deliveryDetails()
+    {
+        return $this->hasMany(PIDeliveryDetail::class)->orderBy('sort_order');
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(PIDocument::class)->orderBy('row_number');
+    }
+
+    public function machineStatus()
+    {
+        return $this->hasOne(MachineStatus::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function preErectionDetails()
+    {
+        return $this->hasMany(PreErectionDetail::class)->orderBy('sort_order');
+    }
+
+    public function msUnloadingImages()
+    {
+        return $this->hasMany(MsUnloadingImage::class)->orderBy('created_at', 'desc');
+    }
+
+    public function damageDetails()
+    {
+        return $this->hasMany(DamageDetail::class)->orderBy('created_at', 'desc');
+    }
+
+    public function serialNumbers()
+    {
+        return $this->hasMany(SerialNumber::class)->orderBy('created_at', 'desc');
+    }
+
+    public function machineErectionDetails()
+    {
+        return $this->hasMany(MachineErectionDetail::class)->orderBy('machine_category_id')->orderBy('sort_order')->orderBy('machine_number');
+    }
+
+    public function iaFittingDetails()
+    {
+        return $this->hasMany(IAFittingDetail::class)->orderBy('machine_category_id')->orderBy('machine_number')->orderBy('sort_order');
+    }
 }

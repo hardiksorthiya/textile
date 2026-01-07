@@ -14,6 +14,7 @@
             selectedCategories: [],
             categoryDropdownOpen: false,
             signaturePreview: null,
+            logoPreview: null,
 
             addBankDetail() {
                 this.bankDetails.push({ bank_name: '', account_number: '', ifsc_code: '', branch_name: '', bank_address: '', account_holder_name: '' });
@@ -58,6 +59,12 @@
                         : `/storage/${seller.signature}`)
                     : null;
 
+                this.logoPreview = seller.logo && seller.logo.trim() !== ''
+                    ? (seller.logo.startsWith('http') || seller.logo.startsWith('/')
+                        ? seller.logo
+                        : `/storage/${seller.logo}`)
+                    : null;
+
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
@@ -67,6 +74,7 @@
                 this.selectedCategories = [];
                 this.bankDetails = [{ bank_name: '', account_number: '', ifsc_code: '', branch_name: '', bank_address: '', account_holder_name: '' }];
                 this.signaturePreview = null;
+                this.logoPreview = null;
             }
         }">
 
@@ -231,6 +239,17 @@
                                       style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                <small class="text-muted">Max size: 2MB, Formats: JPEG, PNG, JPG, GIF</small>
                                @error('signature')
+                                   <div class="invalid-feedback">{{ $message }}</div>
+                               @enderror
+                           </div>
+
+                           <div class="mb-3">
+                               <label class="form-label fw-semibold" style="color: #374151;">Logo <small class="text-muted">(Image Upload)</small></label>
+                               <input type="file" name="logo" accept="image/*"
+                                      class="form-control @error('logo') is-invalid @enderror"
+                                      style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                               <small class="text-muted">Max size: 2MB, Formats: JPEG, PNG, JPG, GIF</small>
+                               @error('logo')
                                    <div class="invalid-feedback">{{ $message }}</div>
                                @enderror
                            </div>
@@ -426,6 +445,20 @@
                                    <small class="text-muted">Max size: 2MB, Formats: JPEG, PNG, JPG, GIF. Leave empty to keep current image.</small>
                                </div>
 
+                               <div class="mb-3">
+                                   <label class="form-label fw-semibold" style="color: #374151;">Logo <small class="text-muted">(Image Upload)</small></label>
+                                   <template x-if="logoPreview">
+                                       <div class="mb-2">
+                                           <img :src="logoPreview" alt="Logo Preview" class="img-thumbnail" style="max-height: 100px;">
+                                       </div>
+                                   </template>
+                                   <input type="file" name="logo" accept="image/*"
+                                          @change="(e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { logoPreview = e.target.result; }; reader.readAsDataURL(file); } else { logoPreview = editingSeller.logo ? (editingSeller.logo.startsWith('http') || editingSeller.logo.startsWith('/') ? editingSeller.logo : `/storage/${editingSeller.logo}`) : null; } }"
+                                          class="form-control"
+                                          style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                   <small class="text-muted">Max size: 2MB, Formats: JPEG, PNG, JPG, GIF. Leave empty to keep current image.</small>
+                               </div>
+
                                <!-- Bank Details Section -->
                                <div class="mb-4">
                                    <div class="d-flex justify-content-between align-items-center mb-2">
@@ -540,6 +573,7 @@
                                                             pi_short_name: '{{ addslashes($seller->pi_short_name) }}',
                                                             gst_no: '{{ addslashes($seller->gst_no ?? '') }}',
                                                             signature: '{{ addslashes($seller->signature ?? '') }}',
+                                                            logo: '{{ addslashes($seller->logo ?? '') }}',
                                                             categories: @js($seller->machineCategories),
                                                             bank_details: @js($seller->bankDetails)
                                                         })"

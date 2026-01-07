@@ -27,6 +27,7 @@ use App\Http\Controllers\MachineChainController;
 use App\Http\Controllers\MachineHealdWireController;
 use App\Http\Controllers\MachineEReadController;
 use App\Http\Controllers\DeliveryTermController;
+use App\Http\Controllers\MachineStatusController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\StateController;
 use App\Http\Controllers\CityController;
@@ -41,14 +42,58 @@ use App\Http\Controllers\ProformaInvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PortOfDestinationController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
+Route::get('/dashboard', function (Request $request) {
+    // Get month from request or use current month
+    $month = $request->input('month', now()->format('Y-m'));
+    $selectedDate = \Carbon\Carbon::createFromFormat('Y-m', $month);
+    
+    $startOfMonth = $selectedDate->copy()->startOfMonth();
+    $endOfMonth = $selectedDate->copy()->endOfMonth();
+    
+    $tasks = \App\Models\Task::where('user_id', auth()->id())
+        ->whereBetween('due_date', [$startOfMonth, $endOfMonth])
+        ->where('status', '!=', 'completed')
+        ->with('lead')
+        ->orderBy('due_date', 'asc')
+        ->get()
+        ->groupBy(function($task) {
+            return $task->due_date ? $task->due_date->format('Y-m-d') : null;
+        });
+    
+    // Prepare tasks data for JavaScript
+    $tasksForJs = $tasks->map(function($dayTasks, $date) {
+        return [
+            'date' => $date,
+            'tasks' => $dayTasks->map(function($task) use ($date) {
+                $dueDate = $task->due_date ? $task->due_date : null;
+                $lead = $task->lead;
+                $scheduledTime = $lead && $lead->scheduled_time ? $lead->scheduled_time : null;
+                
+                return [
+                    'id' => $task->id,
+                    'title' => $task->title,
+                    'description' => $task->description,
+                    'priority' => $task->priority,
+                    'status' => $task->status,
+                    'due_date' => $dueDate ? $dueDate->format('Y-m-d') : null,
+                    'due_date_formatted' => $dueDate ? $dueDate->format('l, F d, Y') : null,
+                    'event_type' => $lead ? 'Meeting' : 'Task',
+                    'scheduled_time' => $scheduledTime ? \Carbon\Carbon::parse($scheduledTime)->format('h:i A') : null,
+                    'lead_id' => $task->lead_id,
+                ];
+            })->values()->toArray()
+        ];
+    })->values()->toArray();
+    
+    return view('dashboard', compact('tasks', 'selectedDate', 'tasksForJs'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -105,8 +150,10 @@ Route::middleware('auth')->group(function () {
         // Seller Routes
         Route::resource('sellers', SellerController::class)->only(['index', 'store', 'update', 'destroy']);
         
-        // PI Layout Routes
-        Route::resource('pi-layouts', \App\Http\Controllers\PILayoutController::class);
+        // PI Layout Routes (excluding index - use admin settings page instead)
+        Route::resource('pi-layouts', \App\Http\Controllers\PILayoutController::class)->except(['index']);
+        Route::get('pi-layouts/{piLayout}/preview', [\App\Http\Controllers\PILayoutController::class, 'preview'])
+            ->name('pi-layouts.preview');
         
         // Country Routes
         Route::resource('countries', CountryController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -131,6 +178,12 @@ Route::middleware('auth')->group(function () {
         
         // Machine Hook Routes
         Route::resource('machine-hooks', MachineHookController::class)->only(['index', 'store', 'update', 'destroy']);
+        
+        // Spare Routes
+        Route::resource('spares', \App\Http\Controllers\SpareController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::get('/spares/import', [\App\Http\Controllers\SpareController::class, 'showImport'])->name('spares.show-import');
+        Route::post('/spares/import', [\App\Http\Controllers\SpareController::class, 'import'])->name('spares.import');
+        Route::get('/spares/download-template', [\App\Http\Controllers\SpareController::class, 'downloadTemplate'])->name('spares.download-template');
         
         // Color Routes
         Route::resource('colors', ColorController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -272,6 +325,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/contracts/over-invoice', [ContractController::class, 'overInvoice'])->name('contracts.over-invoice');
         Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show');
         Route::get('/contracts/{contract}/download-pdf', [ContractController::class, 'downloadPdf'])->name('contracts.download-pdf');
+        Route::get('/machine-statuses', [MachineStatusController::class, 'index'])->name('machine-statuses.index');
+        Route::get('/machine-statuses/create', [MachineStatusController::class, 'create'])->name('machine-statuses.create');
+        Route::post('/machine-statuses', [MachineStatusController::class, 'store'])->name('machine-statuses.store');
+        Route::get('/machine-statuses/get-pis', [MachineStatusController::class, 'getPINumbersBySalesManager'])->name('machine-statuses.get-pis');
+        Route::get('/machine-statuses/get-contracts', [MachineStatusController::class, 'getContractsBySalesManager'])->name('machine-statuses.get-contracts');
     });
     
     // Users with "convert contract" or "view contract approvals" can edit contracts they created
@@ -296,6 +354,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/proforma-invoices', [ProformaInvoiceController::class, 'index'])->name('proforma-invoices.index');
         Route::get('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'show'])->name('proforma-invoices.show');
         Route::get('/proforma-invoices/{proformaInvoice}/download-pdf', [ProformaInvoiceController::class, 'downloadPdf'])->name('proforma-invoices.download-pdf');
+        Route::get('/proforma-invoices-delivery-details', [ProformaInvoiceController::class, 'deliveryDetailsIndex'])->name('proforma-invoices.delivery-details-index');
     });
     
     Route::middleware(['permission:create proforma invoices'])->group(function () {
@@ -306,10 +365,95 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['permission:edit proforma invoices'])->group(function () {
         Route::get('/proforma-invoices/{proformaInvoice}/edit', [ProformaInvoiceController::class, 'edit'])->name('proforma-invoices.edit');
         Route::put('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'update'])->name('proforma-invoices.update');
+        Route::get('/proforma-invoices/{proformaInvoice}/delivery-details', [ProformaInvoiceController::class, 'deliveryDetails'])->name('proforma-invoices.delivery-details');
+        Route::post('/proforma-invoices/{proformaInvoice}/delivery-details', [ProformaInvoiceController::class, 'storeDeliveryDetails'])->name('proforma-invoices.store-delivery-details');
     });
     
     Route::middleware(['permission:delete proforma invoices'])->group(function () {
         Route::delete('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'destroy'])->name('proforma-invoices.destroy');
+    });
+    
+    // Pre Erection Routes
+    Route::middleware(['permission:view proforma invoices|edit proforma invoices'])->group(function () {
+        Route::get('/pre-erection', [\App\Http\Controllers\PreErectionController::class, 'index'])->name('pre-erection.index');
+        Route::get('/pre-erection/get-pis', [\App\Http\Controllers\PreErectionController::class, 'getPINumbersBySalesManager'])->name('pre-erection.get-pis');
+        Route::get('/pre-erection/get-customers', [\App\Http\Controllers\PreErectionController::class, 'getCustomersBySalesManager'])->name('pre-erection.get-customers');
+    });
+    
+    Route::middleware(['permission:edit proforma invoices'])->group(function () {
+        Route::get('/pre-erection/{proformaInvoice}', [\App\Http\Controllers\PreErectionController::class, 'show'])->name('pre-erection.show');
+        Route::post('/pre-erection/{proformaInvoice}', [\App\Http\Controllers\PreErectionController::class, 'store'])->name('pre-erection.store');
+    });
+    
+    // MS Unloading Image Routes
+    Route::middleware(['permission:view proforma invoices|edit proforma invoices'])->group(function () {
+        Route::get('/ms-unloading-images', [\App\Http\Controllers\MsUnloadingImageController::class, 'index'])->name('ms-unloading-images.index');
+        Route::get('/ms-unloading-images/get-pis', [\App\Http\Controllers\MsUnloadingImageController::class, 'getPINumbersBySalesManager'])->name('ms-unloading-images.get-pis');
+        Route::get('/ms-unloading-images/get-customers', [\App\Http\Controllers\MsUnloadingImageController::class, 'getCustomersBySalesManager'])->name('ms-unloading-images.get-customers');
+    });
+    
+    Route::middleware(['permission:edit proforma invoices'])->group(function () {
+        Route::get('/ms-unloading-images/{proformaInvoice}', [\App\Http\Controllers\MsUnloadingImageController::class, 'show'])->name('ms-unloading-images.show');
+        Route::post('/ms-unloading-images/{proformaInvoice}', [\App\Http\Controllers\MsUnloadingImageController::class, 'store'])->name('ms-unloading-images.store');
+        Route::delete('/ms-unloading-images/{msUnloadingImage}', [\App\Http\Controllers\MsUnloadingImageController::class, 'destroy'])->name('ms-unloading-images.destroy');
+    });
+    
+    // Machine Erection Routes
+    Route::middleware(['permission:view proforma invoices|edit proforma invoices'])->group(function () {
+        Route::get('/machine-erection', [\App\Http\Controllers\MachineErectionController::class, 'index'])->name('machine-erection.index');
+        Route::get('/machine-erection/get-pis', [\App\Http\Controllers\MachineErectionController::class, 'getPINumbersBySalesManager'])->name('machine-erection.get-pis');
+        Route::get('/machine-erection/get-customers', [\App\Http\Controllers\MachineErectionController::class, 'getCustomersBySalesManager'])->name('machine-erection.get-customers');
+    });
+    
+    Route::middleware(['permission:edit proforma invoices'])->group(function () {
+        Route::get('/machine-erection/{proformaInvoice}', [\App\Http\Controllers\MachineErectionController::class, 'show'])->name('machine-erection.show');
+        Route::post('/machine-erection/{proformaInvoice}', [\App\Http\Controllers\MachineErectionController::class, 'store'])->name('machine-erection.store');
+    });
+    
+    // IA Fitting Routes
+    Route::middleware(['permission:view proforma invoices|edit proforma invoices'])->group(function () {
+        Route::get('/ia-fitting', [\App\Http\Controllers\IAFittingController::class, 'index'])->name('ia-fitting.index');
+        Route::get('/ia-fitting/get-pis', [\App\Http\Controllers\IAFittingController::class, 'getPINumbersBySalesManager'])->name('ia-fitting.get-pis');
+        Route::get('/ia-fitting/get-customers', [\App\Http\Controllers\IAFittingController::class, 'getCustomersBySalesManager'])->name('ia-fitting.get-customers');
+    });
+    
+    Route::middleware(['permission:edit proforma invoices'])->group(function () {
+        Route::get('/ia-fitting/{proformaInvoice}', [\App\Http\Controllers\IAFittingController::class, 'show'])->name('ia-fitting.show');
+        Route::post('/ia-fitting/{proformaInvoice}', [\App\Http\Controllers\IAFittingController::class, 'store'])->name('ia-fitting.store');
+    });
+    
+    // Damage Detail Routes - Order matters! More specific routes must come first
+    Route::middleware(['permission:view proforma invoices|edit proforma invoices'])->group(function () {
+        // Static routes first
+        Route::get('/damage-details', [\App\Http\Controllers\DamageDetailController::class, 'index'])->name('damage-details.index');
+        Route::get('/damage-details/get-pis', [\App\Http\Controllers\DamageDetailController::class, 'getPINumbersBySalesManager'])->name('damage-details.get-pis');
+        Route::get('/damage-details/get-customers', [\App\Http\Controllers\DamageDetailController::class, 'getCustomersBySalesManager'])->name('damage-details.get-customers');
+        
+        // Specific routes with /edit and /image must come before generic routes
+        Route::middleware(['permission:edit proforma invoices'])->group(function () {
+            Route::get('/damage-details/{damageDetail}/edit', [\App\Http\Controllers\DamageDetailController::class, 'edit'])->name('damage-details.edit');
+            Route::put('/damage-details/{damageDetail}', [\App\Http\Controllers\DamageDetailController::class, 'update'])->name('damage-details.update');
+            Route::delete('/damage-details/{damageDetail}', [\App\Http\Controllers\DamageDetailController::class, 'destroy'])->name('damage-details.destroy');
+            Route::delete('/damage-details-image/{damageImage}', [\App\Http\Controllers\DamageDetailController::class, 'destroyImage'])->name('damage-details.destroy-image');
+        });
+        
+        // Generic routes come last
+        Route::get('/damage-details/{proformaInvoice}', [\App\Http\Controllers\DamageDetailController::class, 'show'])->name('damage-details.show');
+        Route::middleware(['permission:edit proforma invoices'])->group(function () {
+            Route::post('/damage-details/{proformaInvoice}', [\App\Http\Controllers\DamageDetailController::class, 'store'])->name('damage-details.store');
+        });
+    });
+    
+    // Serial Number Routes
+    Route::middleware(['permission:view proforma invoices|edit proforma invoices'])->group(function () {
+        Route::get('/serial-numbers', [\App\Http\Controllers\SerialNumberController::class, 'index'])->name('serial-numbers.index');
+        Route::get('/serial-numbers/get-pis', [\App\Http\Controllers\SerialNumberController::class, 'getPINumbersBySalesManager'])->name('serial-numbers.get-pis');
+        Route::get('/serial-numbers/get-customers', [\App\Http\Controllers\SerialNumberController::class, 'getCustomersBySalesManager'])->name('serial-numbers.get-customers');
+    });
+    
+    Route::middleware(['permission:edit proforma invoices'])->group(function () {
+        Route::get('/serial-numbers/{proformaInvoice}', [\App\Http\Controllers\SerialNumberController::class, 'show'])->name('serial-numbers.show');
+        Route::post('/serial-numbers/{proformaInvoice}', [\App\Http\Controllers\SerialNumberController::class, 'store'])->name('serial-numbers.store');
     });
     
     // Payment Routes
@@ -356,6 +500,9 @@ Route::middleware('auth')->group(function () {
             return view('reports.index');
         })->name('reports.index');
     });
+    
+    // Tasks Routes - Available to all authenticated users
+    Route::resource('tasks', TaskController::class);
 });
 
 require __DIR__.'/auth.php';

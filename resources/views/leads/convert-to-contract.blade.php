@@ -28,7 +28,6 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold" style="color: #374151;">Business Firm <span class="text-danger">*</span></label>
                                 <select name="business_firm_id" required class="form-select @error('business_firm_id') is-invalid @enderror" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                    <option value="">Select Business Firm</option>
                                     @foreach($businessFirms as $firm)
                                         <option value="{{ $firm->id }}" {{ old('business_firm_id') == $firm->id ? 'selected' : '' }}>{{ $firm->name }}</option>
                                     @endforeach
@@ -82,7 +81,6 @@
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold" style="color: #374151;">State <span class="text-danger">*</span></label>
                                 <select name="state_id" required id="state_id" class="form-select @error('state_id') is-invalid @enderror" style="border-radius: 8px; border: 1px solid #e5e7eb;" @change="loadCities($event.target.value)">
-                                    <option value="">Select State</option>
                                     @foreach($states as $state)
                                         <option value="{{ $state->id }}" {{ old('state_id', $lead->state_id) == $state->id ? 'selected' : '' }}>{{ $state->name }}</option>
                                     @endforeach
@@ -95,7 +93,6 @@
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold" style="color: #374151;">City <span class="text-danger">*</span></label>
                                 <select name="city_id" required id="city_id" class="form-select @error('city_id') is-invalid @enderror" style="border-radius: 8px; border: 1px solid #e5e7eb;" @change="loadAreas($event.target.value)">
-                                    <option value="">Select City</option>
                                     @foreach($cities as $city)
                                         <option value="{{ $city->id }}" {{ old('city_id', $lead->city_id) == $city->id ? 'selected' : '' }}>{{ $city->name }}</option>
                                     @endforeach
@@ -108,7 +105,6 @@
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold" style="color: #374151;">Area <span class="text-danger">*</span></label>
                                 <select name="area_id" required id="area_id" class="form-select @error('area_id') is-invalid @enderror" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                    <option value="">Select Area</option>
                                     @foreach($areas as $area)
                                         <option value="{{ $area->id }}" {{ old('area_id', $lead->area_id) == $area->id ? 'selected' : '' }}>{{ $area->name }}</option>
                                     @endforeach
@@ -192,7 +188,6 @@
                                                 <div class="col-md-4">
                                                     <label class="form-label fw-semibold" style="color: #374151;">Machine Category <span class="text-danger">*</span></label>
                                                     <select :name="`machines[${index}][machine_category_id]`" required x-model="machine.machine_category_id" @change="loadCategoryItems(index, $event.target.value)" class="form-select" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                                        <option value="">Select Category</option>
                                                         @foreach($categories as $category)
                                                             <option value="{{ $category->id }}">{{ $category->name }}</option>
                                                         @endforeach
@@ -203,9 +198,19 @@
                                                     <div class="col-md-4">
                                                         <label class="form-label fw-semibold" style="color: #374151;">Brand</label>
                                                         <select :name="`machines[${index}][brand_id]`" x-model="machine.brand_id" @change="loadMachineModels(index, $event.target.value)" :id="`brand_${index}`" class="form-select" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                                            <option value="">Select Brand</option>
                                                             <template x-for="brand in (machine.categoryItems?.brands || [])" :key="brand.id">
                                                                 <option :value="String(brand.id)" x-text="brand.name"></option>
+                                                            </template>
+                                                        </select>
+                                                    </div>
+                                                </template>
+                                                <!-- Machine Seller - only show when category is selected -->
+                                                <template x-if="machine.categoryItems && machine.categoryItems.sellers && machine.categoryItems.sellers.length > 0">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold" style="color: #374151;">Machine Seller</label>
+                                                        <select :name="`machines[${index}][seller_id]`" x-model="machine.seller_id" :id="`seller_${index}`" class="form-select" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                                            <template x-for="seller in (machine.categoryItems?.sellers || [])" :key="seller.id">
+                                                                <option :value="String(seller.id)" x-text="seller.seller_name"></option>
                                                             </template>
                                                         </select>
                                                     </div>
@@ -215,7 +220,6 @@
                                                     <div class="col-md-4">
                                                         <label class="form-label fw-semibold" style="color: #374151;">Model</label>
                                                         <select :name="`machines[${index}][machine_model_id]`" x-model="machine.machine_model_id" :id="`machine_model_${index}`" class="form-select" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                                            <option value="">Select Model</option>
                                                             <template x-for="model in (machine.machineModels || [])" :key="model.id">
                                                                 <option :value="String(model.id)" x-text="model.model_no"></option>
                                                             </template>
@@ -712,6 +716,7 @@
                         brand_id: '',
                         machine_model_id: '',
                         machineModels: [],
+                        seller_id: '',
                         quantity: 1,
                         description: '',
                         categoryItems: null,
@@ -745,19 +750,36 @@
 
                 async loadCities(stateId) {
                     if (!stateId) {
-                        document.getElementById('city_id').innerHTML = '<option value="">Select City</option>';
-                        document.getElementById('area_id').innerHTML = '<option value="">Select Area</option>';
+                        document.getElementById('city_id').innerHTML = '';
+                        document.getElementById('area_id').innerHTML = '';
                         return;
                     }
                     try {
                         const response = await fetch(`{{ url('leads/cities') }}/${stateId}`);
                         const cities = await response.json();
                         const citySelect = document.getElementById('city_id');
-                        citySelect.innerHTML = '<option value="">Select City</option>';
+                        const areaSelect = document.getElementById('area_id');
+                        const selectedCityId = citySelect.value; // Preserve current selection
+                        const selectedAreaId = areaSelect.value; // Preserve current area selection
+                        
+                        citySelect.innerHTML = '';
                         cities.forEach(city => {
-                            citySelect.innerHTML += `<option value="${city.id}">${city.name}</option>`;
+                            const selected = city.id == selectedCityId ? 'selected' : '';
+                            citySelect.innerHTML += `<option value="${city.id}" ${selected}>${city.name}</option>`;
                         });
-                        document.getElementById('area_id').innerHTML = '<option value="">Select Area</option>';
+                        
+                        // If city was pre-selected, load its areas
+                        if (selectedCityId) {
+                            await this.loadAreas(selectedCityId);
+                            // Restore area selection if it exists
+                            if (selectedAreaId && areaSelect) {
+                                setTimeout(() => {
+                                    areaSelect.value = selectedAreaId;
+                                }, 100);
+                            }
+                        } else {
+                            areaSelect.innerHTML = '';
+                        }
                     } catch (error) {
                         console.error('Error loading cities:', error);
                     }
@@ -765,14 +787,14 @@
 
                 async loadAreas(cityId) {
                     if (!cityId) {
-                        document.getElementById('area_id').innerHTML = '<option value="">Select Area</option>';
+                        document.getElementById('area_id').innerHTML = '';
                         return;
                     }
                     try {
                         const response = await fetch(`{{ url('leads/areas') }}/${cityId}`);
                         const areas = await response.json();
                         const areaSelect = document.getElementById('area_id');
-                        areaSelect.innerHTML = '<option value="">Select Area</option>';
+                        areaSelect.innerHTML = '';
                         areas.forEach(area => {
                             areaSelect.innerHTML += `<option value="${area.id}">${area.name}</option>`;
                         });
@@ -810,6 +832,7 @@
                         this.machines[index].categoryItems = null;
                         this.machines[index].brand_id = '';
                         this.machines[index].machine_model_id = '';
+                        this.machines[index].seller_id = '';
                         return;
                     }
                     try {
@@ -818,9 +841,10 @@
                         console.log('Category items loaded:', items); // Debug log
                         this.machines[index].categoryItems = items;
                         
-                        // Reset brand and model when category changes
+                        // Reset brand, model, and seller when category changes
                         this.machines[index].brand_id = '';
                         this.machines[index].machine_model_id = '';
+                        this.machines[index].seller_id = '';
                         this.machines[index].machineModels = [];
                         
                         // Auto-select first brand if available - use $nextTick to ensure dropdown is rendered
@@ -905,9 +929,39 @@
         // Initialize cities and areas if state/city is pre-selected
         document.addEventListener('DOMContentLoaded', function() {
             const stateSelect = document.getElementById('state_id');
+            const citySelect = document.getElementById('city_id');
+            
+            // If state is pre-selected, ensure cities are loaded
             if (stateSelect && stateSelect.value) {
-                const event = new Event('change');
-                stateSelect.dispatchEvent(event);
+                // Get the Alpine component instance
+                const alpineElement = document.querySelector('[x-data="contractForm()"]');
+                if (alpineElement && alpineElement._x_dataStack && alpineElement._x_dataStack[0]) {
+                    const contractForm = alpineElement._x_dataStack[0];
+                    
+                    // Load cities first
+                    contractForm.loadCities(stateSelect.value).then(() => {
+                        // After cities load, if city is pre-selected, load areas
+                        if (citySelect && citySelect.value) {
+                            setTimeout(() => {
+                                contractForm.loadAreas(citySelect.value);
+                            }, 100);
+                        }
+                    });
+                } else {
+                    // Fallback: trigger events manually
+                    if (stateSelect.value) {
+                        const stateEvent = new Event('change', { bubbles: true });
+                        stateSelect.dispatchEvent(stateEvent);
+                        
+                        // Wait for cities to load, then trigger city change
+                        setTimeout(() => {
+                            if (citySelect && citySelect.value) {
+                                const cityEvent = new Event('change', { bubbles: true });
+                                citySelect.dispatchEvent(cityEvent);
+                            }
+                        }, 300);
+                    }
+                }
             }
         });
     </script>

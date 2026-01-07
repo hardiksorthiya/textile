@@ -127,6 +127,7 @@ class PurchaseOrderController extends Controller
             'proforma_invoice_id' => 'required|exists:proforma_invoices,id',
             'purchase_order_number' => 'required|string|max:255|unique:purchase_orders,purchase_order_number',
             'buyer_name' => 'required|string|max:255',
+            'address' => 'nullable|string',
             'no_of_bill' => 'nullable|integer|min:0',
             'no_of_container' => 'nullable|integer|min:0',
             'size_of_container' => 'nullable|string|max:255',
@@ -217,6 +218,7 @@ class PurchaseOrderController extends Controller
     {
         $validated = $request->validate([
             'buyer_name' => 'required|string|max:255',
+            'address' => 'nullable|string',
             'no_of_bill' => 'nullable|integer|min:0',
             'no_of_container' => 'nullable|integer|min:0',
             'size_of_container' => 'nullable|string|max:255',

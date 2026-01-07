@@ -11,6 +11,7 @@ class ContractMachine extends Model
         'machine_category_id',
         'brand_id',
         'machine_model_id',
+        'seller_id',
         'quantity',
         'amount',
         'description',
@@ -50,6 +51,11 @@ class ContractMachine extends Model
     public function machineModel()
     {
         return $this->belongsTo(MachineModel::class);
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class);
     }
 
     public function feeder()

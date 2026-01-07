@@ -22,16 +22,20 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-semibold" style="color: #374151;">Lead Type</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="lead_type" id="type_new" value="new" x-model="leadType" @change="switchFormType('new')" {{ $lead->type === 'new' ? 'checked' : '' }}>
-                            <label class="btn btn-outline-primary" for="type_new" style="border-radius: 8px 0 0 8px;">
-                                <i class="fas fa-plus-circle me-2"></i>New
-                            </label>
-                            <input type="radio" class="btn-check" name="lead_type" id="type_old" value="old" x-model="leadType" @change="switchFormType('old')" {{ $lead->type === 'old' ? 'checked' : '' }}>
-                            <label class="btn btn-outline-primary" for="type_old" style="border-radius: 0 8px 8px 0;">
-                                <i class="fas fa-history me-2"></i>Old
-                            </label>
+                        <label class="form-label fw-semibold" style="color: #374151;">Lead Type <span class="text-danger">*</span></label>
+                        <div class="d-flex align-items-center gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="lead_type" id="type_new" value="new" x-model="leadType" @change="switchFormType('new')" {{ $lead->type === 'new' ? 'checked' : '' }} style="cursor: pointer;">
+                                <label class="form-check-label" for="type_new" style="cursor: pointer; color: #374151;">
+                                    New
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="lead_type" id="type_old" value="old" x-model="leadType" @change="switchFormType('old')" {{ $lead->type === 'old' ? 'checked' : '' }} style="cursor: pointer;">
+                                <label class="form-check-label" for="type_old" style="cursor: pointer; color: #374151;">
+                                    Old
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -267,13 +271,10 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold" style="color: #374151;">Brand of Machine <span class="text-danger">*</span></label>
-                                    <select name="brand_id" required class="form-select @error('brand_id') is-invalid @enderror" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                        <option value="">Select Brand</option>
-                                        @foreach($brands as $brand)
-                                            <option value="{{ $brand->id }}" {{ $lead->brand_id == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('brand_id')
+                                    <input type="text" name="brand_name" required value="{{ old('brand_name', $lead->brand_name) }}" 
+                                           class="form-control @error('brand_name') is-invalid @enderror" 
+                                           placeholder="Enter brand name" style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    @error('brand_name')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
