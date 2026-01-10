@@ -13,7 +13,7 @@ class MachineModelController extends Controller
      */
     public function index()
     {
-        $machineModels = MachineModel::with('brand')->orderBy('model_no')->paginate(10);
+        $machineModels = MachineModel::with('brands')->orderBy('model_no')->paginate(10);
         $brands = Brand::orderBy('name')->get();
         return view('machine-models.index', compact('machineModels', 'brands'));
     }
@@ -25,13 +25,17 @@ class MachineModelController extends Controller
     {
         $request->validate([
             'model_no' => 'required|string|max:255|unique:machine_models,model_no',
-            'brand_id' => 'required|exists:brands,id',
+            'brands' => 'required|array|min:1',
+            'brands.*' => 'exists:brands,id',
         ]);
 
-        MachineModel::create([
+        $machineModel = MachineModel::create([
             'model_no' => $request->model_no,
-            'brand_id' => $request->brand_id,
+            'brand_id' => null, // Keep for backward compatibility, but not used
         ]);
+
+        // Attach multiple brands
+        $machineModel->brands()->attach($request->brands);
 
         return redirect()->route('machine-models.index')
             ->with('success', 'Machine model added successfully.');
@@ -44,13 +48,16 @@ class MachineModelController extends Controller
     {
         $request->validate([
             'model_no' => 'required|string|max:255|unique:machine_models,model_no,' . $machineModel->id,
-            'brand_id' => 'required|exists:brands,id',
+            'brands' => 'required|array|min:1',
+            'brands.*' => 'exists:brands,id',
         ]);
 
         $machineModel->update([
             'model_no' => $request->model_no,
-            'brand_id' => $request->brand_id,
         ]);
+
+        // Sync multiple brands (replace all existing brands with new ones)
+        $machineModel->brands()->sync($request->brands);
 
         return redirect()->route('machine-models.index')
             ->with('success', 'Machine model updated successfully.');

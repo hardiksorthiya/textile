@@ -10,14 +10,32 @@
     <div class="row g-4" x-data="{ 
         editingModel: null, 
         isEditing: false,
+        selectedBrands: [],
+        brandDropdownOpen: false,
+        toggleBrand(id) {
+            id = String(id);
+            const index = this.selectedBrands.indexOf(id);
+            index > -1
+                ? this.selectedBrands.splice(index, 1)
+                : this.selectedBrands.push(id);
+        },
+        isBrandSelected(id) {
+            return this.selectedBrands.includes(String(id));
+        },
         editModel(model) {
             this.editingModel = model;
             this.isEditing = true;
+            // brands is an array of IDs from the JSON encoding
+            this.selectedBrands = Array.isArray(model.brands)
+                ? model.brands.map(b => String(b)).filter(Boolean)
+                : [];
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         cancelEdit() {
             this.editingModel = null;
             this.isEditing = false;
+            this.selectedBrands = [];
+            this.brandDropdownOpen = false;
         }
     }">
         <!-- Left Side: Add/Edit Machine Model Form (30%) -->
@@ -47,20 +65,52 @@
                                 @enderror
                             </div>
                             <div class="mb-4">
-                                <label class="form-label fw-semibold" style="color: #374151;">Brand</label>
-                                <select name="brand_id" required
-                                        class="form-select @error('brand_id') is-invalid @enderror"
-                                        style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                    <option value="">Select Brand</option>
-                                    @forelse($brands ?? [] as $brand)
-                                        <option value="{{ $brand->id }}" {{ old('brand_id') == $brand->id ? 'selected' : '' }}>
-                                            {{ $brand->name }}
-                                        </option>
-                                    @empty
-                                        <option value="" disabled>No brands available. Add brands first.</option>
-                                    @endforelse
-                                </select>
-                                @error('brand_id')
+                                <label class="form-label fw-semibold" style="color: #374151;">Brands <small class="text-muted">(Multiple Select)</small></label>
+                                <div class="position-relative" @click.away="brandDropdownOpen = false">
+                                    <button type="button" 
+                                            @click="brandDropdownOpen = !brandDropdownOpen"
+                                            class="form-control text-start d-flex justify-content-between align-items-center @error('brands') is-invalid @enderror"
+                                            style="border-radius: 8px; border: 1px solid #e5e7eb; background: white; min-height: 38px;">
+                                        <span x-text="selectedBrands.length > 0 ? selectedBrands.length + ' brand(s) selected' : 'Select Brands'"></span>
+                                        <i class="fas fa-chevron-down" :class="{ 'rotate-180': brandDropdownOpen }" style="transition: transform 0.3s ease;"></i>
+                                    </button>
+                                    <div x-show="brandDropdownOpen" 
+                                         x-cloak
+                                         class="position-absolute w-100 bg-white border rounded shadow-lg mt-1"
+                                         style="z-index: 1000; max-height: 200px; overflow-y: auto; border-color: #e5e7eb !important;"
+                                         @click.stop>
+                                        @forelse($brands ?? [] as $brand)
+                                            <div class="d-flex align-items-center py-2 px-3" 
+                                                 x-data="{ hovered: false }"
+                                                 :style="isBrandSelected({{ $brand->id }}) || hovered ? 'background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff);' : 'background-color: white;'"
+                                                 style="cursor: pointer; transition: background 0.2s; border-radius: 4px; margin: 2px;" 
+                                                 @mouseenter="hovered = true"
+                                                 @mouseleave="hovered = false"
+                                                 @click="toggleBrand({{ $brand->id }})">
+                                                <input class="form-check-input me-3" 
+                                                       type="checkbox" 
+                                                       :checked="isBrandSelected({{ $brand->id }})"
+                                                       style="cursor: pointer; margin-top: 0; flex-shrink: 0;"
+                                                       @click.stop="toggleBrand({{ $brand->id }})">
+                                                <label class="flex-grow-1 mb-0" style="cursor: pointer; margin: 0;">
+                                                    {{ $brand->name }}
+                                                </label>
+                                                <i class="fas fa-check text-primary ms-2" x-show="isBrandSelected({{ $brand->id }})" style="font-size: 0.875rem;"></i>
+                                            </div>
+                                        @empty
+                                            <div class="p-3 text-center text-muted">
+                                                <small>No brands available. Add brands first.</small>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                    <template x-for="brandId in selectedBrands" :key="brandId">
+                                        <input type="hidden" :name="`brands[]`" :value="brandId">
+                                    </template>
+                                </div>
+                                @error('brands')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                @error('brands.*')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -85,20 +135,48 @@
                                            style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                 </div>
                                 <div class="mb-4">
-                                    <label class="form-label fw-semibold" style="color: #374151;">Brand</label>
-                                    <select name="brand_id" required
-                                            class="form-select"
-                                            style="border-radius: 8px; border: 1px solid #e5e7eb;"
-                                            x-model="editingModel.brand_id">
-                                        <option value="">Select Brand</option>
-                                        @forelse($brands ?? [] as $brand)
-                                            <option value="{{ $brand->id }}">
-                                                {{ $brand->name }}
-                                            </option>
-                                        @empty
-                                            <option value="" disabled>No brands available</option>
-                                        @endforelse
-                                    </select>
+                                    <label class="form-label fw-semibold" style="color: #374151;">Brands <small class="text-muted">(Multiple Select)</small></label>
+                                    <div class="position-relative" @click.away="brandDropdownOpen = false">
+                                        <button type="button" 
+                                                @click="brandDropdownOpen = !brandDropdownOpen"
+                                                class="form-control text-start d-flex justify-content-between align-items-center"
+                                                style="border-radius: 8px; border: 1px solid #e5e7eb; background: white; min-height: 38px;">
+                                            <span x-text="selectedBrands.length > 0 ? selectedBrands.length + ' brand(s) selected' : 'Select Brands'"></span>
+                                            <i class="fas fa-chevron-down" :class="{ 'rotate-180': brandDropdownOpen }" style="transition: transform 0.3s ease;"></i>
+                                        </button>
+                                        <div x-show="brandDropdownOpen" 
+                                             x-cloak
+                                             class="position-absolute w-100 bg-white border rounded shadow-lg mt-1"
+                                             style="z-index: 1000; max-height: 200px; overflow-y: auto; border-color: #e5e7eb !important;"
+                                             @click.stop>
+                                            @forelse($brands ?? [] as $brand)
+                                                <div class="d-flex align-items-center py-2 px-3" 
+                                                     x-data="{ hovered: false }"
+                                                     :style="isBrandSelected({{ $brand->id }}) || hovered ? 'background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff);' : 'background-color: white;'"
+                                                     style="cursor: pointer; transition: background 0.2s; border-radius: 4px; margin: 2px;" 
+                                                     @mouseenter="hovered = true"
+                                                     @mouseleave="hovered = false"
+                                                     @click="toggleBrand({{ $brand->id }})">
+                                                    <input class="form-check-input me-3" 
+                                                           type="checkbox" 
+                                                           :checked="isBrandSelected({{ $brand->id }})"
+                                                           style="cursor: pointer; margin-top: 0; flex-shrink: 0;"
+                                                           @click.stop="toggleBrand({{ $brand->id }})">
+                                                    <label class="flex-grow-1 mb-0" style="cursor: pointer; margin: 0;">
+                                                        {{ $brand->name }}
+                                                    </label>
+                                                    <i class="fas fa-check text-primary ms-2" x-show="isBrandSelected({{ $brand->id }})" style="font-size: 0.875rem;"></i>
+                                                </div>
+                                            @empty
+                                                <div class="p-3 text-center text-muted">
+                                                    <small>No brands available</small>
+                                                </div>
+                                            @endforelse
+                                        </div>
+                                        <template x-for="brandId in selectedBrands" :key="brandId">
+                                            <input type="hidden" :name="`brands[]`" :value="brandId">
+                                        </template>
+                                    </div>
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="button" @click="cancelEdit()" class="btn btn-outline-secondary flex-grow-1" style="border-radius: 8px;">
@@ -153,9 +231,18 @@
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-tags me-2 text-muted" style="font-size: 0.75rem;"></i>
-                                                <small class="text-muted" style="font-size: 0.85rem;">{{ $model->brand->name ?? 'N/A' }}</small>
+                                            <div class="d-flex align-items-center flex-wrap gap-1">
+                                                @if($model->brands && $model->brands->count() > 0)
+                                                    @foreach($model->brands as $brand)
+                                                        <span class="badge" style="background-color: #e0e7ff; color: #6366f1; font-size: 0.75rem; padding: 0.35rem 0.75rem; font-weight: 500;">
+                                                            <i class="fas fa-tags me-1" style="font-size: 0.7rem;"></i>{{ $brand->name }}
+                                                        </span>
+                                                    @endforeach
+                                                @else
+                                                    <small class="text-muted" style="font-size: 0.85rem;">
+                                                        <i class="fas fa-tags me-1" style="font-size: 0.75rem;"></i>N/A
+                                                    </small>
+                                                @endif
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
@@ -170,7 +257,7 @@
                                                         @click="editModel({
                                                             id: {{ $model->id }},
                                                             model_no: '{{ addslashes($model->model_no) }}',
-                                                            brand_id: {{ $model->brand_id }}
+                                                            brands: {{ json_encode($model->brands->pluck('id')->toArray()) }}
                                                         })"
                                                         class="btn btn-sm btn-outline-primary" 
                                                         title="Edit Model"
@@ -255,6 +342,9 @@
     @endif
 
     <style>
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
         .table-hover tbody tr:hover {
             background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff) !important;
             transform: scale(1.01);

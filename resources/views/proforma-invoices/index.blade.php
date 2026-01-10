@@ -113,7 +113,59 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="fw-bold" style="color: var(--primary-color);">
-                                        {{ $pi->currency === 'INR' ? '₹' : '$' }}{{ number_format($pi->total_amount, 2) }}
+                                        @php
+                                            // Match frontend logic exactly
+                                            // Frontend for local: displayTotalAmount = totalFinalAmountUSD (USD amount, shown with ₹ symbol)
+                                            // Frontend for high seas/import: displayTotalAmount = totalFinalAmountUSD (USD amount, shown with $ symbol)
+                                            
+                                            // Recalculate USD amount from machines (before currency conversion)
+                                            if (!$pi->relationLoaded('proformaInvoiceMachines')) {
+                                                $pi->load('proformaInvoiceMachines');
+                                            }
+                                            
+                                            $totalMachineAmount = 0;
+                                            $totalCommissionAmount = 0;
+                                            
+                                            foreach ($pi->proformaInvoiceMachines as $machine) {
+                                                $unitAmount = $machine->amount ?? 0;
+                                                $amcPrice = $machine->amc_price ?? 0;
+                                                $piMachineAmount = $unitAmount * ($machine->quantity ?? 0);
+                                                $piTotalAmount = $piMachineAmount + $amcPrice;
+                                                $totalMachineAmount += $piTotalAmount;
+                                                
+                                                // Commission Amount (for High Seas only, per machine)
+                                                if ($pi->type_of_sale === 'high_seas' && $pi->commission) {
+                                                    $commissionAmount = ($piTotalAmount * $pi->commission) / 100;
+                                                    $totalCommissionAmount += $commissionAmount;
+                                                }
+                                            }
+                                            
+                                            // Add stored totals (calculated per-machine and summed)
+                                            $overseasFreight = $pi->overseas_freight ?? 0;
+                                            $portExpensesClearing = $pi->port_expenses_clearing ?? 0;
+                                            $gstAmount = $pi->gst_amount ?? 0;
+                                            
+                                            // Final amount in USD (before currency conversion) - matches frontend totalFinalAmountUSD
+                                            $totalFinalAmountUSD = $totalMachineAmount + $totalCommissionAmount + $overseasFreight + $portExpensesClearing + $gstAmount;
+                                            
+                                            // Match frontend: displayTotalAmount = totalFinalAmountUSD for all types
+                                            $displayAmount = $totalFinalAmountUSD;
+                                            $currencySymbol = $pi->currency === 'INR' ? '₹' : '$';
+                                        @endphp
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>{{ $currencySymbol }}{{ number_format($displayAmount, 2) }}</span>
+                                            @if($pi->type_of_sale === 'local' && $pi->usd_rate)
+                                                <!-- Show USD equivalent for Local (matches frontend: displayTotalAmount / usdRate) -->
+                                                <span class="text-success" style="font-size: 0.875rem;">
+                                                    (${{ number_format($displayAmount / $pi->usd_rate, 2) }})
+                                                </span>
+                                            @elseif($pi->type_of_sale === 'high_seas' && $pi->usd_rate)
+                                                <!-- Show INR equivalent for High Seas (Final Amount * USD Rate) -->
+                                                <span class="text-success" style="font-size: 0.875rem;">
+                                                    (₹{{ number_format($displayAmount * $pi->usd_rate, 2) }})
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3">

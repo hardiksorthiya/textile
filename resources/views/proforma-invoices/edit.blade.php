@@ -30,9 +30,10 @@
             'ifc_certificate_number' => $proformaInvoice->ifc_certificate_number,
             'billing_address' => $proformaInvoice->billing_address,
             'shipping_address' => $proformaInvoice->shipping_address,
-            'overseas_freight' => $proformaInvoice->overseas_freight,
-            'port_expenses_clearing' => $proformaInvoice->port_expenses_clearing,
-            'gst_percentage' => $proformaInvoice->gst_percentage,
+            'overseas_freight' => $proformaInvoice->overseas_freight ?? 0,
+            'port_expenses_clearing' => $proformaInvoice->port_expenses_clearing ?? 0,
+            'gst_percentage' => ($proformaInvoice->gst_percentage !== null && $proformaInvoice->gst_percentage > 0) ? $proformaInvoice->gst_percentage : null,
+            'gst_amount' => $proformaInvoice->gst_amount ?? 0,
             'notes' => $proformaInvoice->notes,
         ],
         'machines' => $proformaInvoice->proformaInvoiceMachines->map(function($piMachine) use ($proformaInvoice) {
@@ -46,9 +47,9 @@
                 'pi_price_plus_amc' => $piMachine->pi_price_plus_amc ?? 0,
                 'total_pi_price' => $piMachine->total_pi_price ?? 0,
                 'description' => $piMachine->description ?? '',
-                'gst_percentage' => $proformaInvoice->gst_percentage ?? 18,
-                'overseas_freight' => 0,
-                'port_expenses_clearing' => 0,
+                'gst_percentage' => ($proformaInvoice->gst_percentage !== null && $proformaInvoice->gst_percentage > 0) ? $proformaInvoice->gst_percentage : null,
+                'overseas_freight' => $proformaInvoice->overseas_freight ?? 0,
+                'port_expenses_clearing' => $proformaInvoice->port_expenses_clearing ?? 0,
                 'brand_id' => $piMachine->brand_id ? (string)$piMachine->brand_id : '',
                 'machine_model_id' => $piMachine->machine_model_id ? (string)$piMachine->machine_model_id : '',
                 'feeder_id' => $piMachine->feeder_id ? (string)$piMachine->feeder_id : '',
@@ -477,20 +478,23 @@
                                                     <div class="input-group">
                                                         <input type="number" 
                                                                :name="`machines[${index}][gst_percentage]`"
-                                                               x-model="machine.gst_percentage"
+                                                               x-model.number="machine.gst_percentage"
                                                                @input="calculateMachineFinalAmount(machine.tempId)"
                                                                step="0.01"
                                                                min="0"
                                                                max="100"
                                                                class="form-control" 
-                                                               placeholder="Enter GST %"
+                                                               :placeholder="machine.gst_percentage !== undefined && machine.gst_percentage !== null ? machine.gst_percentage : (gstPercentage || 'Enter GST %')"
                                                                style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                                         <span class="input-group-text">%</span>
                                                     </div>
+                                                    <small class="text-muted" x-show="(machine.gst_percentage === undefined || machine.gst_percentage === null || machine.gst_percentage === '') && gstPercentage">
+                                                        Using PI-level GST: <span x-text="gstPercentage"></span>%
+                                                    </small>
                                                 </div>
 
                                                 <!-- GST Amount (calculated) -->
-                                                <div class="col-md-4" x-show="machine.contract_machine_id && machine.quantity > 0">
+                                                <div class="col-md-4" x-show="machine.contract_machine_id && machine.quantity > 0 && ((machine.gst_percentage !== undefined && machine.gst_percentage !== null && parseFloat(machine.gst_percentage) > 0) || (gstPercentage !== undefined && gstPercentage !== null && parseFloat(gstPercentage) > 0))">
                                                     <label class="form-label fw-semibold" style="color: #374151;">GST Amount</label>
                                                     <div class="form-control bg-light fw-semibold" style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                                         <span x-text="currencySymbol"></span><span x-text="getMachineGSTAmount(machine.tempId).toFixed(2)"></span>
@@ -878,7 +882,36 @@
                 usedQuantitiesByCategory: {}, // Used quantities from existing PIs per category
                 selectedMachines: {},
                 selectedCategories: [],
-                addedMachines: initialPIData?.machines || [],
+                addedMachines: (initialPIData?.machines || []).map(machine => {
+                    // Ensure GST percentage is set from PI-level value if not present in machine data
+                    // Only set if value exists and is > 0, otherwise leave as null/undefined
+                    if (machine.gst_percentage === undefined || machine.gst_percentage === null || machine.gst_percentage === '') {
+                        const piGst = initialPIData?.proformaInvoice?.gst_percentage;
+                        if (piGst !== undefined && piGst !== null && piGst !== '' && parseFloat(piGst) > 0) {
+                            machine.gst_percentage = parseFloat(piGst);
+                        } else {
+                            machine.gst_percentage = null; // Don't set 0, leave as null
+                        }
+                    } else {
+                        const parsed = parseFloat(machine.gst_percentage);
+                        machine.gst_percentage = (parsed > 0) ? parsed : null; // Only set if > 0
+                    }
+                    // Ensure overseas_freight is set from PI-level value if not present
+                    if (machine.overseas_freight === undefined || machine.overseas_freight === null || machine.overseas_freight === '') {
+                        const piFreight = initialPIData?.proformaInvoice?.overseas_freight;
+                        machine.overseas_freight = (piFreight !== undefined && piFreight !== null && piFreight !== '') ? parseFloat(piFreight) : 0;
+                    } else {
+                        machine.overseas_freight = parseFloat(machine.overseas_freight) || 0;
+                    }
+                    // Ensure port_expenses_clearing is set from PI-level value if not present
+                    if (machine.port_expenses_clearing === undefined || machine.port_expenses_clearing === null || machine.port_expenses_clearing === '') {
+                        const piPort = initialPIData?.proformaInvoice?.port_expenses_clearing;
+                        machine.port_expenses_clearing = (piPort !== undefined && piPort !== null && piPort !== '') ? parseFloat(piPort) : 0;
+                    } else {
+                        machine.port_expenses_clearing = parseFloat(machine.port_expenses_clearing) || 0;
+                    }
+                    return machine;
+                }),
                 tempMachineIdCounter: (initialPIData?.machines?.length || 0) + 1,
                 totalAmount: 0,
                 sellerId: initialPIData?.proformaInvoice?.seller_id || null,
@@ -901,8 +934,8 @@
                 amcPrice: 0,
                 overseasFreight: initialPIData?.proformaInvoice?.overseas_freight || 0,
                 portExpensesClearing: initialPIData?.proformaInvoice?.port_expenses_clearing || 0,
-                gstPercentage: initialPIData?.proformaInvoice?.gst_percentage || 18,
-                gstAmount: 0,
+                gstPercentage: (initialPIData?.proformaInvoice?.gst_percentage !== undefined && initialPIData?.proformaInvoice?.gst_percentage !== null && parseFloat(initialPIData?.proformaInvoice?.gst_percentage) > 0) ? parseFloat(initialPIData?.proformaInvoice?.gst_percentage) : null,
+                gstAmount: initialPIData?.proformaInvoice?.gst_amount || 0,
                 finalAmountWithGST: 0,
                 notes: initialPIData?.proformaInvoice?.notes || '',
 
@@ -929,7 +962,17 @@
                                     const savedAmount = machineData.amount || 0;
                                     const savedAmcPrice = machineData.amc_price || 0;
                                     const savedDescription = machineData.description || '';
-                                    const savedGstPercentage = machineData.gst_percentage || this.gstPercentage || 18;
+                                    // Get GST percentage - check if machineData has it, otherwise use PI-level gstPercentage
+                                    // Only set if value is > 0, otherwise leave as null
+                                    let savedGstPercentage = null;
+                                    if (machineData.gst_percentage !== undefined && machineData.gst_percentage !== null && machineData.gst_percentage !== '') {
+                                        const parsed = parseFloat(machineData.gst_percentage);
+                                        savedGstPercentage = (!isNaN(parsed) && parsed > 0) ? parsed : null;
+                                    }
+                                    // If machine data doesn't have GST or it's 0, check PI-level
+                                    if (savedGstPercentage === null && this.gstPercentage !== undefined && this.gstPercentage !== null && this.gstPercentage !== '' && parseFloat(this.gstPercentage) > 0) {
+                                        savedGstPercentage = parseFloat(this.gstPercentage);
+                                    }
                                     // Save brand and model IDs (important - these are strings) - get from machineData which is the source of truth
                                     const savedBrandId = (machineData.brand_id && machineData.brand_id !== '' && machineData.brand_id !== null && machineData.brand_id !== undefined && machineData.brand_id !== '0') ? String(machineData.brand_id) : '';
                                     const savedModelId = (machineData.machine_model_id && machineData.machine_model_id !== '' && machineData.machine_model_id !== null && machineData.machine_model_id !== undefined && machineData.machine_model_id !== '0') ? String(machineData.machine_model_id) : '';
@@ -963,9 +1006,25 @@
                                     machine.amount = savedAmount > 0 ? savedAmount : (machine.contractAmount || 0);
                                     machine.amc_price = savedAmcPrice;
                                     machine.description = savedDescription;
-                                    machine.gst_percentage = savedGstPercentage;
-                                    machine.overseas_freight = machineData.overseas_freight || 0;
-                                    machine.port_expenses_clearing = machineData.port_expenses_clearing || 0;
+                                    // Set GST percentage - only set if > 0, otherwise leave as null
+                                    if (savedGstPercentage !== null && savedGstPercentage !== undefined && !isNaN(parseFloat(savedGstPercentage)) && parseFloat(savedGstPercentage) > 0) {
+                                        machine.gst_percentage = parseFloat(savedGstPercentage);
+                                    } else {
+                                        // Check PI-level GST
+                                        if (this.gstPercentage !== undefined && this.gstPercentage !== null && this.gstPercentage !== '' && parseFloat(this.gstPercentage) > 0) {
+                                            machine.gst_percentage = parseFloat(this.gstPercentage);
+                                        } else {
+                                            machine.gst_percentage = null; // Leave empty, don't set 0
+                                        }
+                                    }
+                                    
+                                    // Use PI-level values for overseas_freight and port_expenses_clearing if machine-level values are 0 or not set
+                                    machine.overseas_freight = (machineData.overseas_freight && parseFloat(machineData.overseas_freight) > 0) ? machineData.overseas_freight : (this.overseasFreight || 0);
+                                    machine.port_expenses_clearing = (machineData.port_expenses_clearing && parseFloat(machineData.port_expenses_clearing) > 0) ? machineData.port_expenses_clearing : (this.portExpensesClearing || 0);
+                                    
+                                    // Force recalculation after setting all values
+                                    await this.$nextTick();
+                                    this.calculateMachineFinalAmount(machine.tempId);
                                     
                                     // STEP 6: Restore all other specification IDs FIRST (before brand/model - brand/model need to be restored last)
                                     // Restore all other specification IDs - ensure values match option value formats
@@ -1164,9 +1223,9 @@
                         contractAmount: 0, // Original contract amount
                         maxQuantity: 0, // Original contract quantity for this machine
                         contractQuantityPerCategory: 0, // Original contract quantity for this category
-                        overseas_freight: 0,
-                        port_expenses_clearing: 0,
-                        gst_percentage: 18,
+                        overseas_freight: this.overseasFreight || 0,
+                        port_expenses_clearing: this.portExpensesClearing || 0,
+                        gst_percentage: (this.gstPercentage !== undefined && this.gstPercentage !== null && this.gstPercentage !== '' && parseFloat(this.gstPercentage) > 0) ? parseFloat(this.gstPercentage) : null,
                         brand_id: '',
                         machine_model_id: '',
                         feeder_id: '',
@@ -1376,8 +1435,11 @@
                     if (machine.port_expenses_clearing === undefined || machine.port_expenses_clearing === null) {
                         machine.port_expenses_clearing = 0;
                     }
-                    if (machine.gst_percentage === undefined || machine.gst_percentage === null || machine.gst_percentage === 0) {
-                        machine.gst_percentage = 18;
+                    // Only set GST percentage if PI-level GST is > 0, otherwise leave as null
+                    if ((machine.gst_percentage === undefined || machine.gst_percentage === null || machine.gst_percentage === '') && this.gstPercentage !== undefined && this.gstPercentage !== null && this.gstPercentage !== '' && parseFloat(this.gstPercentage) > 0) {
+                        machine.gst_percentage = parseFloat(this.gstPercentage);
+                    } else if (machine.gst_percentage === undefined || machine.gst_percentage === null || machine.gst_percentage === '') {
+                        machine.gst_percentage = null; // Don't set 0, leave empty
                     }
                     
                     // Load category items for this machine's category FIRST (only if not already loaded)
@@ -1768,6 +1830,17 @@
                     const machine = this.addedMachines.find(m => m.tempId === tempId);
                     if (!machine) return 0;
                     
+                    // Get GST percentage - use machine level if set and > 0, otherwise use PI-level
+                    let gstPercent = 0;
+                    if (machine.gst_percentage !== undefined && machine.gst_percentage !== null && machine.gst_percentage !== '' && parseFloat(machine.gst_percentage) > 0) {
+                        gstPercent = parseFloat(machine.gst_percentage);
+                    } else if (this.gstPercentage !== undefined && this.gstPercentage !== null && this.gstPercentage !== '' && parseFloat(this.gstPercentage) > 0) {
+                        gstPercent = parseFloat(this.gstPercentage);
+                    }
+                    
+                    // If GST percentage is 0 or not set, return 0
+                    if (gstPercent <= 0) return 0;
+                    
                     // PI Machine Amount + AMC Price
                     // PI Machine Amount = PI Per Machine Amount × Quantity
                     // AMC Price = AMC Price (not multiplied by quantity)
@@ -1776,7 +1849,6 @@
                     const piTotalAmount = piMachineAmount + amcPrice;
                     
                     // GST Amount = (PI Machine Amount + AMC Price) × GST Per
-                    const gstPercent = parseFloat(machine.gst_percentage) || 0;
                     return (piTotalAmount * gstPercent) / 100;
                 },
 

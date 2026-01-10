@@ -151,7 +151,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('sellers', SellerController::class)->only(['index', 'store', 'update', 'destroy']);
         
         // PI Layout Routes (excluding index - use admin settings page instead)
-        Route::resource('pi-layouts', \App\Http\Controllers\PILayoutController::class)->except(['index']);
+        Route::resource('pi-layouts', \App\Http\Controllers\PILayoutController::class)
+            ->except(['index'])
+            ->parameters(['pi-layouts' => 'piLayout']);
         Route::get('pi-layouts/{piLayout}/preview', [\App\Http\Controllers\PILayoutController::class, 'preview'])
             ->name('pi-layouts.preview');
         

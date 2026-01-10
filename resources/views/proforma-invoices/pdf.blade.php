@@ -7,7 +7,7 @@
     <style>
         @page {
             margin-top: 10mm;
-            margin-bottom: 10mm;
+            margin-bottom: 5px;
             margin-left: 15mm;
             margin-right: 15mm;
         }

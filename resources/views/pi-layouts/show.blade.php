@@ -12,9 +12,9 @@
     </div>
 
     <!-- Layout Preview Only -->
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div style="border: 1px solid #dee2e6; border-radius: 0.375rem; overflow: hidden;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div style="overflow: hidden;">
                 <iframe 
                     src="{{ route('pi-layouts.preview', $piLayout) }}"
                     style="width: 100%; height: 900px; border: none; display: block;"

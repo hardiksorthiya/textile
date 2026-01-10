@@ -6,6 +6,7 @@ use App\Models\Feeder;
 use App\Models\FeederBrand;
 use App\Models\MachineCategory;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class FeederController extends Controller
 {
@@ -26,7 +27,15 @@ class FeederController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'feeder' => 'required|string|max:255|unique:feeders,feeder',
+            'feeder' => [
+                'required',
+                'string',
+                'max:255',
+                // Check for unique combination of feeder + feeder_brand_id
+                Rule::unique('feeders')->where(function ($query) use ($request) {
+                    return $query->where('feeder_brand_id', $request->feeder_brand_id);
+                }),
+            ],
             'feeder_brand_id' => 'required|exists:feeder_brands,id',
             'categories' => 'required|array',
             'categories.*' => 'exists:machine_categories,id',
@@ -50,7 +59,15 @@ class FeederController extends Controller
     public function update(Request $request, Feeder $feeder)
     {
         $request->validate([
-            'feeder' => 'required|string|max:255|unique:feeders,feeder,' . $feeder->id,
+            'feeder' => [
+                'required',
+                'string',
+                'max:255',
+                // Check for unique combination of feeder + feeder_brand_id, ignoring current record
+                Rule::unique('feeders')->where(function ($query) use ($request) {
+                    return $query->where('feeder_brand_id', $request->feeder_brand_id);
+                })->ignore($feeder->id),
+            ],
             'feeder_brand_id' => 'required|exists:feeder_brands,id',
             'categories' => 'required|array',
             'categories.*' => 'exists:machine_categories,id',

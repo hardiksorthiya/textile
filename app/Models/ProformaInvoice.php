@@ -112,4 +112,51 @@ class ProformaInvoice extends Model
     {
         return $this->hasMany(IAFittingDetail::class)->orderBy('machine_category_id')->orderBy('machine_number')->orderBy('sort_order');
     }
+
+    /**
+     * Calculate total amount from stored machines and expenses
+     * Matches the frontend calculation: per-machine expenses, commission, and GST
+     * Uses stored totals (overseas_freight, port_expenses_clearing, gst_amount) which are now calculated correctly
+     */
+    public function calculateTotalAmount()
+    {
+        // Load machines if not already loaded
+        if (!$this->relationLoaded('proformaInvoiceMachines')) {
+            $this->load('proformaInvoiceMachines');
+        }
+
+        // Calculate total from machines with per-machine commission
+        $totalMachineAmount = 0;
+        $totalCommissionAmount = 0;
+        
+        foreach ($this->proformaInvoiceMachines as $machine) {
+            $unitAmount = $machine->amount ?? 0;
+            $amcPrice = $machine->amc_price ?? 0;
+            $piMachineAmount = $unitAmount * ($machine->quantity ?? 0);
+            $piTotalAmount = $piMachineAmount + $amcPrice;
+            $totalMachineAmount += $piTotalAmount;
+            
+            // Commission Amount (for High Seas only, per machine)
+            if ($this->type_of_sale === 'high_seas' && $this->commission) {
+                $commissionAmount = ($piTotalAmount * $this->commission) / 100;
+                $totalCommissionAmount += $commissionAmount;
+            }
+        }
+        
+        // Add stored totals (now calculated correctly per-machine and summed)
+        $overseasFreight = $this->overseas_freight ?? 0;
+        $portExpensesClearing = $this->port_expenses_clearing ?? 0;
+        $gstAmount = $this->gst_amount ?? 0; // Stored GST amount (calculated per-machine)
+        
+        // Final amount = Machines + AMC + Commission + Freight + Port + GST
+        $finalAmountWithGST = $totalMachineAmount + $totalCommissionAmount + $overseasFreight + $portExpensesClearing + $gstAmount;
+        
+        // Store USD amount for all types (frontend handles display conversion)
+        // For local sales, amounts are calculated in USD and displayed with ₹ symbol
+        // The USD equivalent shown in parentheses is calculated as: displayAmount / usd_rate
+        // So we return the USD amount (finalAmountWithGST) without conversion
+        $displayAmount = $finalAmountWithGST;
+        
+        return $displayAmount;
+    }
 }

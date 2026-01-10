@@ -32,6 +32,7 @@ use App\Models\DeliveryTerm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf as DomPDF;
 
@@ -185,8 +186,11 @@ class ProformaInvoiceController extends Controller
             $proformaInvoiceNumber = $this->generateProformaInvoiceNumber($seller);
             
             // Calculate total amount and validate quantities
-            $totalAmount = 0;
-            $contractAmountsInUSD = [];
+            // Match frontend calculation: per-machine expenses, commission, and GST
+            $totalFinalAmountUSD = 0;
+            $totalOverseasFreight = 0;
+            $totalPortExpenses = 0;
+            $totalGSTAmount = 0;
             
             foreach ($request->machines as $machineData) {
                 $contractMachine = ContractMachine::with('machineCategory')->findOrFail($machineData['contract_machine_id']);
@@ -206,41 +210,43 @@ class ProformaInvoiceController extends Controller
                 
                 // Add AMC price to the calculation
                 $amcPrice = isset($machineData['amc_price']) ? floatval($machineData['amc_price']) : 0;
-                $piPricePlusAmc = $unitAmount + $amcPrice;
+                $piMachineAmount = $unitAmount * $machineData['quantity'];
+                $piTotalAmount = $piMachineAmount + $amcPrice;
                 
-                // Contract amounts are stored in USD, so we use them directly
-                // Total = (PI Price + AMC Price) × Quantity
-                $machineTotalUSD = $machineData['quantity'] * $piPricePlusAmc;
-                $contractAmountsInUSD[] = $machineTotalUSD;
+                // Commission Amount (for High Seas only, per machine)
+                $commissionAmount = 0;
+                if ($request->type_of_sale === 'high_seas' && $request->commission) {
+                    $commissionAmount = ($piTotalAmount * $request->commission) / 100;
+                }
+                
+                // Per-machine expenses
+                $overseasFreight = isset($machineData['overseas_freight']) ? floatval($machineData['overseas_freight']) : 0;
+                $portExpensesClearing = isset($machineData['port_expenses_clearing']) ? floatval($machineData['port_expenses_clearing']) : 0;
+                
+                // GST per machine (on PI + AMC amount)
+                $gstPercentage = isset($machineData['gst_percentage']) ? floatval($machineData['gst_percentage']) : 0;
+                $gstAmount = ($piTotalAmount * $gstPercentage) / 100;
+                
+                // Machine final amount = PI + AMC + Commission + Freight + Port + GST
+                $machineFinalAmount = $piTotalAmount + $commissionAmount + $overseasFreight + $portExpensesClearing + $gstAmount;
+                $totalFinalAmountUSD += $machineFinalAmount;
+                
+                // Track totals for storage
+                $totalOverseasFreight += $overseasFreight;
+                $totalPortExpenses += $portExpensesClearing;
+                $totalGSTAmount += $gstAmount;
             }
             
-            // Calculate total in base currency (USD from contract)
-            $totalAmountUSD = array_sum($contractAmountsInUSD);
+            // Final amount with all per-machine calculations (in USD)
+            $finalAmountWithGST = $totalFinalAmountUSD;
             
-            // Add overseas freight and port expenses
-            $overseasFreight = $request->overseas_freight ?? 0;
-            $portExpensesClearing = $request->port_expenses_clearing ?? 0;
-            $subtotal = $totalAmountUSD + $overseasFreight + $portExpensesClearing;
-            
-            // Calculate GST
-            $gstPercentage = $request->gst_percentage ?? 18;
-            $gstAmount = ($subtotal * $gstPercentage) / 100;
-            
-            // Final amount with GST
-            $finalAmountWithGST = $subtotal + $gstAmount;
-            
-            // Convert to display currency if needed
+            // Store USD amount for all types (frontend handles display conversion)
+            // For local sales, amounts are calculated in USD and displayed with ₹ symbol
+            // The USD equivalent shown in parentheses is calculated as: displayAmount / usd_rate
+            // So we store the USD amount (finalAmountWithGST) without conversion
             $displayAmount = $finalAmountWithGST;
-            if ($request->type_of_sale === 'local' && $request->usd_rate) {
-                // Convert USD to INR for local sales
-                $displayAmount = $finalAmountWithGST * $request->usd_rate;
-            }
             
-            // Add commission for high seas
-            if ($request->type_of_sale === 'high_seas' && $request->commission) {
-                $commissionAmount = ($displayAmount * $request->commission) / 100;
-                $displayAmount = $displayAmount + $commissionAmount;
-            }
+            // Note: Commission is already included per-machine for high seas, so no additional commission needed here
             
             // Create proforma invoice
             $proformaInvoice = ProformaInvoice::create([
@@ -263,7 +269,8 @@ class ProformaInvoiceController extends Controller
                 'shipping_address' => $request->shipping_address,
                 'overseas_freight' => $request->overseas_freight,
                 'port_expenses_clearing' => $request->port_expenses_clearing,
-                'gst_percentage' => $request->gst_percentage ?? 18,
+                // Get GST percentage from PI-level or first machine that has GST > 0
+                'gst_percentage' => $this->getGSTPercentageFromRequest($request),
                 'gst_amount' => $gstAmount,
                 'final_amount_with_gst' => $finalAmountWithGST,
                 'notes' => $request->notes,
@@ -325,7 +332,7 @@ class ProformaInvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ProformaInvoice::with(['contract', 'seller', 'creator'])
+        $query = ProformaInvoice::with(['contract', 'seller', 'creator', 'proformaInvoiceMachines'])
             ->orderBy('created_at', 'desc');
 
         // Filter by Sales Manager (contract creator)
@@ -412,7 +419,14 @@ class ProformaInvoiceController extends Controller
         ]);
         
         // Get the layout to use (seller's layout or default)
-        $layout = $proformaInvoice->seller->piLayout ?? PILayout::where('is_default', true)->where('is_active', true)->first();
+        // First check if seller exists and has a layout assigned
+        $layout = null;
+        if ($proformaInvoice->seller && $proformaInvoice->seller->piLayout) {
+            $layout = $proformaInvoice->seller->piLayout;
+        } else {
+            // Fall back to default active layout
+            $layout = PILayout::where('is_default', true)->where('is_active', true)->first();
+        }
         
         return view('proforma-invoices.show', compact('proformaInvoice', 'layout'));
     }
@@ -522,9 +536,11 @@ class ProformaInvoiceController extends Controller
         
         DB::beginTransaction();
         try {
-            // Calculate totals (similar to store method)
-            $totalAmount = 0;
-            $contractAmountsInUSD = [];
+            // Calculate totals (matching frontend: per-machine calculation)
+            $totalFinalAmountUSD = 0;
+            $totalOverseasFreight = 0;
+            $totalPortExpenses = 0;
+            $totalGSTAmount = 0;
             
             foreach ($request->machines as $machineData) {
                 $contractMachine = ContractMachine::findOrFail($machineData['contract_machine_id']);
@@ -541,29 +557,43 @@ class ProformaInvoiceController extends Controller
                     : $contractMachine->amount;
                 
                 $amcPrice = isset($machineData['amc_price']) ? floatval($machineData['amc_price']) : 0;
-                $piPricePlusAmc = $unitAmount + $amcPrice;
-                $machineTotalUSD = $machineData['quantity'] * $piPricePlusAmc;
-                $contractAmountsInUSD[] = $machineTotalUSD;
+                $piMachineAmount = $unitAmount * $machineData['quantity'];
+                $piTotalAmount = $piMachineAmount + $amcPrice;
+                
+                // Commission Amount (for High Seas only, per machine)
+                $commissionAmount = 0;
+                if ($request->type_of_sale === 'high_seas' && $request->commission) {
+                    $commissionAmount = ($piTotalAmount * $request->commission) / 100;
+                }
+                
+                // Per-machine expenses
+                $overseasFreight = isset($machineData['overseas_freight']) ? floatval($machineData['overseas_freight']) : 0;
+                $portExpensesClearing = isset($machineData['port_expenses_clearing']) ? floatval($machineData['port_expenses_clearing']) : 0;
+                
+                // GST per machine (on PI + AMC amount)
+                $gstPercentage = isset($machineData['gst_percentage']) ? floatval($machineData['gst_percentage']) : 0;
+                $gstAmount = ($piTotalAmount * $gstPercentage) / 100;
+                
+                // Machine final amount = PI + AMC + Commission + Freight + Port + GST
+                $machineFinalAmount = $piTotalAmount + $commissionAmount + $overseasFreight + $portExpensesClearing + $gstAmount;
+                $totalFinalAmountUSD += $machineFinalAmount;
+                
+                // Track totals for storage
+                $totalOverseasFreight += $overseasFreight;
+                $totalPortExpenses += $portExpensesClearing;
+                $totalGSTAmount += $gstAmount;
             }
             
-            $totalAmountUSD = array_sum($contractAmountsInUSD);
-            $overseasFreight = $request->overseas_freight ?? 0;
-            $portExpensesClearing = $request->port_expenses_clearing ?? 0;
-            $subtotal = $totalAmountUSD + $overseasFreight + $portExpensesClearing;
+            // Final amount with all per-machine calculations (in USD)
+            $finalAmountWithGST = $totalFinalAmountUSD;
             
-            $gstPercentage = $request->gst_percentage ?? 18;
-            $gstAmount = ($subtotal * $gstPercentage) / 100;
-            $finalAmountWithGST = $subtotal + $gstAmount;
-            
+            // Store USD amount for all types (frontend handles display conversion)
+            // For local sales, amounts are calculated in USD and displayed with ₹ symbol
+            // The USD equivalent shown in parentheses is calculated as: displayAmount / usd_rate
+            // So we store the USD amount (finalAmountWithGST) without conversion
             $displayAmount = $finalAmountWithGST;
-            if ($request->type_of_sale === 'local' && $request->usd_rate) {
-                $displayAmount = $finalAmountWithGST * $request->usd_rate;
-            }
             
-            if ($request->type_of_sale === 'high_seas' && $request->commission) {
-                $commissionAmount = ($displayAmount * $request->commission) / 100;
-                $displayAmount = $displayAmount + $commissionAmount;
-            }
+            // Note: Commission is already included per-machine for high seas, so no additional commission needed here
             
             // Update proforma invoice
             $proformaInvoice->update([
@@ -581,10 +611,11 @@ class ProformaInvoiceController extends Controller
                 'ifc_certificate_number' => $request->ifc_certificate_number,
                 'billing_address' => $request->billing_address,
                 'shipping_address' => $request->shipping_address,
-                'overseas_freight' => $request->overseas_freight,
-                'port_expenses_clearing' => $request->port_expenses_clearing,
-                'gst_percentage' => $request->gst_percentage ?? 18,
-                'gst_amount' => $gstAmount,
+                'overseas_freight' => $totalOverseasFreight,
+                'port_expenses_clearing' => $totalPortExpenses,
+                // Get GST percentage from PI-level or first machine that has GST > 0
+                'gst_percentage' => $this->getGSTPercentageFromRequest($request),
+                'gst_amount' => $totalGSTAmount,
                 'final_amount_with_gst' => $finalAmountWithGST,
                 'notes' => $request->notes,
             ]);
@@ -662,47 +693,277 @@ class ProformaInvoiceController extends Controller
      */
     public function downloadPdf(ProformaInvoice $proformaInvoice)
     {
-        $proformaInvoice->load([
-            'contract.creator',
-            'contract.businessFirm',
-            'contract.state',
-            'contract.city',
-            'contract.area',
-            'seller.piLayout',
-            'seller.bankDetails',
-            'proformaInvoiceMachines.contractMachine.machineCategory',
-            'proformaInvoiceMachines.contractMachine.brand',
-            'proformaInvoiceMachines.contractMachine.machineModel',
-            'proformaInvoiceMachines.contractMachine.feeder.feederBrand',
-            'proformaInvoiceMachines.contractMachine.machineHook',
-            'proformaInvoiceMachines.contractMachine.machineERead',
-            'proformaInvoiceMachines.contractMachine.color',
-            'proformaInvoiceMachines.contractMachine.machineNozzle',
-            'proformaInvoiceMachines.contractMachine.machineDropin',
-            'proformaInvoiceMachines.contractMachine.machineBeam',
-            'proformaInvoiceMachines.contractMachine.machineClothRoller',
-            'proformaInvoiceMachines.contractMachine.machineSoftware',
-            'proformaInvoiceMachines.contractMachine.hsnCode',
-            'proformaInvoiceMachines.contractMachine.wir',
-            'proformaInvoiceMachines.contractMachine.machineShaft',
-            'proformaInvoiceMachines.contractMachine.machineLever',
-            'proformaInvoiceMachines.contractMachine.machineChain',
-            'proformaInvoiceMachines.contractMachine.machineHealdWire',
-            'proformaInvoiceMachines.contractMachine.deliveryTerm',
-            'creator'
-        ]);
+        try {
+            $proformaInvoice->load([
+                'contract.creator',
+                'contract.businessFirm',
+                'contract.state',
+                'contract.city',
+                'contract.area',
+                'seller.piLayout',
+                'seller.country',
+                'seller.bankDetails',
+                'proformaInvoiceMachines.contractMachine.machineCategory',
+                'proformaInvoiceMachines.contractMachine.brand',
+                'proformaInvoiceMachines.contractMachine.machineModel',
+                'proformaInvoiceMachines.contractMachine.feeder.feederBrand',
+                'proformaInvoiceMachines.contractMachine.machineHook',
+                'proformaInvoiceMachines.contractMachine.machineERead',
+                'proformaInvoiceMachines.contractMachine.color',
+                'proformaInvoiceMachines.contractMachine.machineNozzle',
+                'proformaInvoiceMachines.contractMachine.machineDropin',
+                'proformaInvoiceMachines.contractMachine.machineBeam',
+                'proformaInvoiceMachines.contractMachine.machineClothRoller',
+                'proformaInvoiceMachines.contractMachine.machineSoftware',
+                'proformaInvoiceMachines.contractMachine.hsnCode',
+                'proformaInvoiceMachines.contractMachine.wir',
+                'proformaInvoiceMachines.contractMachine.machineShaft',
+                'proformaInvoiceMachines.contractMachine.machineLever',
+                'proformaInvoiceMachines.contractMachine.machineChain',
+                'proformaInvoiceMachines.contractMachine.machineHealdWire',
+                'proformaInvoiceMachines.contractMachine.deliveryTerm',
+                'creator'
+            ]);
+            
+            // Get the layout to use (seller's layout or default)
+            // First check if seller exists and has a layout assigned
+            $layout = null;
+            if ($proformaInvoice->seller) {
+                // Ensure piLayout relationship is loaded
+                if (!$proformaInvoice->seller->relationLoaded('piLayout')) {
+                    $proformaInvoice->seller->load('piLayout');
+                }
+                
+                // Check if seller has a layout assigned
+                if ($proformaInvoice->seller->piLayout) {
+                    $layout = $proformaInvoice->seller->piLayout;
+                }
+            }
+            
+            // If no seller layout, fall back to default active layout
+            if (!$layout) {
+                $layout = PILayout::where('is_default', true)->where('is_active', true)->first();
+            }
+            
+            // Log which layout is being used for debugging
+            \Log::info('PDF Layout Selection', [
+                'proforma_invoice_id' => $proformaInvoice->id,
+                'seller_id' => $proformaInvoice->seller->id ?? null,
+                'seller_name' => $proformaInvoice->seller->seller_name ?? null,
+                'layout_id' => $layout->id ?? null,
+                'layout_name' => $layout->name ?? null,
+                'has_template' => !empty($layout->template_html ?? null),
+                'is_active' => $layout->is_active ?? false,
+            ]);
+            
+            // If layout exists and has template, use it; otherwise use default PDF view
+            if ($layout && !empty($layout->template_html) && $layout->is_active) {
+                try {
+                    // Set execution time limit for template rendering
+                    set_time_limit(30); // 30 seconds max
+                    
+                    // Render the layout template
+                    $html = $this->renderLayoutTemplate($layout->template_html, $proformaInvoice);
+                    if (!$html || empty(trim($html))) {
+                        throw new \Exception('Layout template rendered empty HTML');
+                    }
+                    
+                    // Load HTML into DomPDF
+                    $pdf = DomPDF::loadHTML($html);
+                } catch (\Exception $e) {
+                    // Log the error but fall back to default PDF view
+                    \Log::warning('Failed to render custom layout, falling back to default PDF: ' . $e->getMessage(), [
+                        'layout_id' => $layout->id,
+                        'layout_name' => $layout->name,
+                        'proforma_invoice_id' => $proformaInvoice->id,
+                        'error_trace' => $e->getTraceAsString()
+                    ]);
+                    // Fall back to default PDF view
+                    $pdf = DomPDF::loadView('proforma-invoices.pdf', compact('proformaInvoice', 'layout'));
+                }
+            } else {
+                // Use default PDF view
+                $pdf = DomPDF::loadView('proforma-invoices.pdf', compact('proformaInvoice', 'layout'));
+            }
+            
+            // Set options to enable font subsetting and Unicode support
+            $pdf->setOption('enable-font-subsetting', true);
+            $pdf->setOption('isHtml5ParserEnabled', true);
+            // Disable remote resource fetching to prevent hangs - we use base64 for images
+            $pdf->setOption('isRemoteEnabled', false);
+            $pdf->setOption('chroot', public_path());
+            // Enable font caching for better performance
+            $pdf->setOption('fontHeightRatio', 1.1);
+            // Set default font to Times New Roman if available
+            $pdf->setOption('defaultFont', 'Times-Roman');
+            
+            return $pdf->download('proforma-invoice-' . $proformaInvoice->proforma_invoice_number . '.pdf');
+        } catch (\Exception $e) {
+            \Log::error('PDF Generation Error: ' . $e->getMessage(), [
+                'proforma_invoice_id' => $proformaInvoice->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->withErrors(['error' => 'Failed to generate PDF: ' . $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Render layout template HTML with proforma invoice data
+     */
+    private function renderLayoutTemplate($templateHtml, $proformaInvoice)
+    {
+        // Ensure seller is loaded with all relationships
+        if ($proformaInvoice->seller) {
+            if (!$proformaInvoice->seller->relationLoaded('country')) {
+                $proformaInvoice->seller->load('country');
+            }
+            if (!$proformaInvoice->seller->relationLoaded('bankDetails')) {
+                $proformaInvoice->seller->load('bankDetails');
+            }
+        }
         
-        // Get the layout to use (seller's layout or default)
-        $layout = $proformaInvoice->seller->piLayout ?? PILayout::where('is_default', true)->where('is_active', true)->first();
+        // Ensure all required relationships are loaded
+        if ($proformaInvoice->contract) {
+            if (!$proformaInvoice->contract->relationLoaded('state')) {
+                $proformaInvoice->contract->load('state');
+            }
+            if (!$proformaInvoice->contract->relationLoaded('city')) {
+                $proformaInvoice->contract->load('city');
+            }
+            if (!$proformaInvoice->contract->relationLoaded('area')) {
+                $proformaInvoice->contract->load('area');
+            }
+            // Contract model doesn't have deliveryTerm relationship
+            // Create delivery_term object from loading_terms field for template compatibility
+            if (!isset($proformaInvoice->contract->delivery_term)) {
+                if (isset($proformaInvoice->contract->loading_terms) && $proformaInvoice->contract->loading_terms) {
+                    $proformaInvoice->contract->delivery_term = (object)['name' => $proformaInvoice->contract->loading_terms];
+                } else {
+                    $proformaInvoice->contract->delivery_term = (object)['name' => 'WITHIN 60 DAYS AFTER RECEIVING PAYMENT'];
+                }
+            }
+        }
         
-        $pdf = DomPDF::loadView('proforma-invoices.pdf', compact('proformaInvoice', 'layout'));
+        // Remove external font links (Google Fonts CDN) as they don't work in PDF
+        // Replace with system fonts or @font-face declarations
+        $templateHtml = preg_replace(
+            '/<link[^>]*href\s*=\s*["\'][^"\']*fonts\.(cdnfonts|googleapis|bunny)[^"\']*["\'][^>]*>/i',
+            '',
+            $templateHtml
+        );
         
-        // Set options to enable font subsetting and Unicode support
-        $pdf->setOption('enable-font-subsetting', true);
-        $pdf->setOption('isHtml5ParserEnabled', true);
-        $pdf->setOption('isRemoteEnabled', true);
+        // Replace "Times New Roman" with "Times-Roman" for DomPDF compatibility
+        // DomPDF uses "Times-Roman" as the built-in font name, but also supports "Times New Roman"
+        // We'll add both to ensure compatibility
+        $templateHtml = str_replace("'Times New Roman'", "'Times-Roman', 'Times New Roman'", $templateHtml);
+        $templateHtml = str_replace('"Times New Roman"', '"Times-Roman", "Times New Roman"', $templateHtml);
+        // Also handle cases without quotes in font-family declarations
+        $templateHtml = preg_replace('/font-family:\s*([^;]*?)Times New Roman([^;]*?);/i', 'font-family: $1Times-Roman, Times New Roman$2;', $templateHtml);
         
-        return $pdf->download('proforma-invoice-' . $proformaInvoice->proforma_invoice_number . '.pdf');
+        // Create a temporary view file
+        $tempPath = storage_path('app/temp_template_' . uniqid() . '.blade.php');
+        
+        try {
+            // Write template to file
+            if (file_put_contents($tempPath, $templateHtml) === false) {
+                throw new \Exception('Failed to write template file to: ' . $tempPath);
+            }
+
+            // Compile the view with data (this processes Blade syntax including asset())
+            $rendered = view()->file($tempPath, [
+                'proformaInvoice' => $proformaInvoice,
+                'seller' => $proformaInvoice->seller ?? null,
+                'machines' => $proformaInvoice->proformaInvoiceMachines ?? collect(),
+                'contract' => $proformaInvoice->contract ?? null,
+            ])->render();
+
+            // Clean up temporary file
+            @unlink($tempPath);
+
+            if (empty(trim($rendered))) {
+                throw new \Exception('Template rendered empty content');
+            }
+            
+            // Now convert image URLs to base64 data URIs AFTER rendering
+            // This prevents DomPDF from trying to fetch remote resources
+            $appUrl = rtrim(config('app.url', 'http://localhost'), '/');
+            
+            // Convert img src URLs to base64 data URIs
+            $rendered = preg_replace_callback(
+                '/<img([^>]*)\s+src\s*=\s*["\']([^"\']+)["\']([^>]*)>/i',
+                function ($matches) use ($appUrl) {
+                    $beforeAttrs = $matches[1];
+                    $srcUrl = $matches[2];
+                    $afterAttrs = $matches[3];
+                    
+                    // Skip if already base64 encoded
+                    if (strpos($srcUrl, 'data:image') === 0) {
+                        return $matches[0];
+                    }
+                    
+                    $filePath = null;
+                    
+                    // Check if it's a local asset URL (various formats)
+                    if (strpos($srcUrl, $appUrl . '/storage/') === 0) {
+                        // Full URL: http://localhost/storage/...
+                        $path = str_replace($appUrl, '', $srcUrl);
+                        $path = ltrim($path, '/');
+                        $filePath = public_path($path);
+                    } elseif (strpos($srcUrl, '/storage/') === 0) {
+                        // Relative URL: /storage/...
+                        $path = ltrim($srcUrl, '/');
+                        $filePath = public_path($path);
+                    } elseif (strpos($srcUrl, 'storage/') === 0) {
+                        // Relative URL without leading slash: storage/...
+                        $filePath = public_path($srcUrl);
+                    }
+                    
+                    // Also check storage_path('app/public') directly
+                    if (!$filePath || !file_exists($filePath)) {
+                        // Try extracting path from URL
+                        if (preg_match('/storage\/(.+)$/i', $srcUrl, $pathMatches)) {
+                            $storagePath = storage_path('app/public/' . $pathMatches[1]);
+                            if (file_exists($storagePath)) {
+                                $filePath = $storagePath;
+                            }
+                        }
+                    }
+                    
+                    if ($filePath && file_exists($filePath) && is_file($filePath)) {
+                        $imageInfo = @getimagesize($filePath);
+                        if ($imageInfo !== false) {
+                            $imageData = @file_get_contents($filePath);
+                            if ($imageData !== false) {
+                                $mimeType = $imageInfo['mime'] ?? 'image/png';
+                                $base64 = base64_encode($imageData);
+                                return '<img' . $beforeAttrs . ' src="data:' . $mimeType . ';base64,' . $base64 . '"' . $afterAttrs . '>';
+                            }
+                        }
+                    }
+                    
+                    // Return original if conversion failed
+                    return $matches[0];
+                },
+                $rendered
+            );
+
+            return $rendered;
+        } catch (\Exception $e) {
+            // Clean up temporary file on error
+            @unlink($tempPath);
+            
+            // Log the error with more details
+            \Log::error('Error rendering PI layout template: ' . $e->getMessage(), [
+                'template_path' => $tempPath,
+                'template_length' => strlen($templateHtml),
+                'proforma_invoice_id' => $proformaInvoice->id ?? null,
+                'seller_id' => $proformaInvoice->seller->id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            throw $e;
+        }
     }
     
     /**
@@ -1067,5 +1328,34 @@ class ProformaInvoiceController extends Controller
         })->orderBy('name')->get();
 
         return view('proforma-invoices.delivery-details-index', compact('proformaInvoices', 'salesManagers'));
+    }
+
+    /**
+     * Get GST percentage from request - check PI-level first, then machine-level
+     */
+    private function getGSTPercentageFromRequest($request)
+    {
+        // First, check if PI-level GST is provided and > 0
+        if ($request->filled('gst_percentage')) {
+            $piGst = floatval($request->gst_percentage);
+            if ($piGst > 0) {
+                return $piGst;
+            }
+        }
+        
+        // Otherwise, get from first machine that has GST > 0
+        if ($request->has('machines') && is_array($request->machines) && count($request->machines) > 0) {
+            foreach ($request->machines as $machineData) {
+                if (isset($machineData['gst_percentage']) && 
+                    $machineData['gst_percentage'] !== null && 
+                    $machineData['gst_percentage'] !== '' && 
+                    $machineData['gst_percentage'] !== '0' &&
+                    floatval($machineData['gst_percentage']) > 0) {
+                    return floatval($machineData['gst_percentage']);
+                }
+            }
+        }
+        
+        return 0;
     }
 }

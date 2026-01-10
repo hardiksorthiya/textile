@@ -79,22 +79,54 @@ use Illuminate\Support\Facades\Storage;
                             <div style="color: #1f2937;">{{ $proformaInvoice->seller->seller_name ?? 'N/A' }}</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold mb-1" style="color: #6b7280; font-size: 0.875rem;">PI Layout</label>
-                            <div style="color: #1f2937;">
-                                {{ $layout->name ?? 'Default Layout' }}
-                                @if($layout && $layout->is_default)
-                                    <span class="badge bg-primary ms-2">Default</span>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold mb-1" style="color: #6b7280; font-size: 0.875rem;">Created By</label>
-                            <div style="color: #1f2937;">{{ $proformaInvoice->creator->name }}</div>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label fw-semibold mb-1" style="color: #6b7280; font-size: 0.875rem;">Total Amount</label>
                             <div class="fw-bold text-primary" style="font-size: 1.125rem;">
-                                {{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->total_amount, 2) }}
+                                @php
+                                    // Match frontend logic: recalculate USD amount from machines (before currency conversion)
+                                    if (!$proformaInvoice->relationLoaded('proformaInvoiceMachines')) {
+                                        $proformaInvoice->load('proformaInvoiceMachines');
+                                    }
+                                    
+                                    $totalMachineAmount = 0;
+                                    $totalCommissionAmount = 0;
+                                    
+                                    foreach ($proformaInvoice->proformaInvoiceMachines as $machine) {
+                                        $unitAmount = $machine->amount ?? 0;
+                                        $amcPrice = $machine->amc_price ?? 0;
+                                        $piMachineAmount = $unitAmount * ($machine->quantity ?? 0);
+                                        $piTotalAmount = $piMachineAmount + $amcPrice;
+                                        $totalMachineAmount += $piTotalAmount;
+                                        
+                                        // Commission Amount (for High Seas only, per machine)
+                                        if ($proformaInvoice->type_of_sale === 'high_seas' && $proformaInvoice->commission) {
+                                            $commissionAmount = ($piTotalAmount * $proformaInvoice->commission) / 100;
+                                            $totalCommissionAmount += $commissionAmount;
+                                        }
+                                    }
+                                    
+                                    // Add stored totals (calculated per-machine and summed)
+                                    $overseasFreight = $proformaInvoice->overseas_freight ?? 0;
+                                    $portExpensesClearing = $proformaInvoice->port_expenses_clearing ?? 0;
+                                    $gstAmount = $proformaInvoice->gst_amount ?? 0;
+                                    
+                                    // Final amount in USD (before currency conversion) - matches frontend totalFinalAmountUSD
+                                    $displayAmount = $totalMachineAmount + $totalCommissionAmount + $overseasFreight + $portExpensesClearing + $gstAmount;
+                                    $currencySymbol = $proformaInvoice->currency === 'INR' ? '₹' : '$';
+                                @endphp
+                                <div class="d-flex align-items-center gap-2">
+                                    <span>{{ $currencySymbol }}{{ number_format($displayAmount, 2) }}</span>
+                                    @if($proformaInvoice->type_of_sale === 'local' && $proformaInvoice->usd_rate)
+                                        <!-- Show USD equivalent for Local -->
+                                        <span class="text-success" style="font-size: 0.875rem;">
+                                            (${{ number_format($displayAmount / $proformaInvoice->usd_rate, 2) }})
+                                        </span>
+                                    @elseif($proformaInvoice->type_of_sale === 'high_seas' && $proformaInvoice->usd_rate)
+                                        <!-- Show INR equivalent for High Seas -->
+                                        <span class="text-success" style="font-size: 0.875rem;">
+                                            (₹{{ number_format($displayAmount * $proformaInvoice->usd_rate, 2) }})
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                         @if($proformaInvoice->billing_address)
@@ -151,7 +183,40 @@ use Illuminate\Support\Facades\Storage;
                                 <tfoot>
                                     <tr class="fw-bold">
                                         <td colspan="5" class="text-end">Total:</td>
-                                        <td class="text-primary">${{ number_format($proformaInvoice->total_amount, 2) }}</td>
+                                        <td class="text-primary">
+                                            @php
+                                                // Use the same calculation as above
+                                                if (!isset($displayAmount)) {
+                                                    if (!$proformaInvoice->relationLoaded('proformaInvoiceMachines')) {
+                                                        $proformaInvoice->load('proformaInvoiceMachines');
+                                                    }
+                                                    
+                                                    $totalMachineAmount = 0;
+                                                    $totalCommissionAmount = 0;
+                                                    
+                                                    foreach ($proformaInvoice->proformaInvoiceMachines as $machine) {
+                                                        $unitAmount = $machine->amount ?? 0;
+                                                        $amcPrice = $machine->amc_price ?? 0;
+                                                        $piMachineAmount = $unitAmount * ($machine->quantity ?? 0);
+                                                        $piTotalAmount = $piMachineAmount + $amcPrice;
+                                                        $totalMachineAmount += $piTotalAmount;
+                                                        
+                                                        if ($proformaInvoice->type_of_sale === 'high_seas' && $proformaInvoice->commission) {
+                                                            $commissionAmount = ($piTotalAmount * $proformaInvoice->commission) / 100;
+                                                            $totalCommissionAmount += $commissionAmount;
+                                                        }
+                                                    }
+                                                    
+                                                    $overseasFreight = $proformaInvoice->overseas_freight ?? 0;
+                                                    $portExpensesClearing = $proformaInvoice->port_expenses_clearing ?? 0;
+                                                    $gstAmount = $proformaInvoice->gst_amount ?? 0;
+                                                    
+                                                    $displayAmount = $totalMachineAmount + $totalCommissionAmount + $overseasFreight + $portExpensesClearing + $gstAmount;
+                                                }
+                                                $currencySymbol = $proformaInvoice->currency === 'INR' ? '₹' : '$';
+                                            @endphp
+                                            {{ $currencySymbol }}{{ number_format($displayAmount, 2) }}
+                                        </td>
                                     </tr>
                                 </tfoot>
                             </table>

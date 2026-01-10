@@ -18,8 +18,9 @@ class Brand extends Model
         return $this->belongsToMany(MachineCategory::class, 'brand_machine_category');
     }
 
+    // Many-to-many relationship with machine models
     public function machineModels()
     {
-        return $this->hasMany(MachineModel::class);
+        return $this->belongsToMany(MachineModel::class, 'brand_machine_model');
     }
 }

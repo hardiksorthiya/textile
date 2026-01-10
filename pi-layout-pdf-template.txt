@@ -3,16 +3,19 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+                
     <title>Proforma Invoice - {{ $proformaInvoice->proforma_invoice_number }}</title>
     <style>
-        @page {
-            margin-top: 10mm;
-            margin-bottom: 10mm;
-            margin-left: 15mm;
-            margin-right: 15mm;
-        }
+.changshu-bor {
+    padding: 10px 20px;
+    border: 1px solid black;
+}
+        
         body {
-            font-family: Arial, sans-serif;
+           font-family: 'Montserrat', sans-serif;
             font-size: 11px;
             color: #000;
             margin: 0;
@@ -32,69 +35,95 @@
         .company-address {
             font-size: 11px;
             margin-bottom: 10px;
+    font-weight: 700;
         }
         .separator-line {
-            border-top: 1px solid #000;
+            border-top: 3px solid #000;
             margin: 10px 0 15px 0;
         }
         .invoice-title {
             text-align: center;
-            font-size: 20px;
+            font-size: 40px;
             font-weight: bold;
             margin: 15px 0 20px 0;
             text-transform: uppercase;
         }
-        .invoice-meta {
-            display: table;
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .invoice-number {
-            display: table-cell;
-            text-align: left;
-            width: 50%;
-        }
-        .invoice-date {
-            display: table-cell;
-            text-align: right;
-            width: 50%;
-        }
+       .invoice-meta {
+    width: 100%;
+    margin-bottom: 20px;
+}
+.invoice-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.invoice-meta-table td {
+    width: 50%;
+    font-size: 14px;
+}
+.invoice-meta-left {
+    text-align: center;
+}
+.invoice-meta-right {
+    text-align: center;
+}
+        
+      
+       
         .recipient-section {
             margin-bottom: 20px;
         }
         .recipient-label {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .recipient-box {
-            border: 1px solid #000;
-            padding: 10px;
-            margin-top: 5px;
-            min-height: 80px;
-        }
-        .recipient-name {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .recipient-address {
-            font-size: 10px;
-            line-height: 1.4;
-        }
+    font-weight: bold;
+    margin-bottom: 5px;
+    margin-right: 30px;
+}
+      .recipient-box {
+    border: 1px solid #000;
+    padding: 10px;
+    margin-top: 5px;
+}
+
+.recipient-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recipient-label-cell {
+    width: 10%;
+    font-weight: bold;
+    vertical-align: top;
+}
+
+.recipient-content-cell {
+    width: 90%;
+    vertical-align: top;
+}
+
+.recipient-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.recipient-address {
+    font-size: 10px;
+    line-height: 1.4;
+}
+
         .items-table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
-            font-size: 10px;
+            font-size: 14px;
         }
         .items-table th,
         .items-table td {
             border: 1px solid #000;
-            padding: 8px 5px;
+            padding: 20px 5px;
             text-align: left;
             vertical-align: top;
         }
         .items-table th {
-            background-color: #f0f0f0;
+           
             font-weight: bold;
             text-align: center;
         }
@@ -138,26 +167,25 @@
             border-top: 2px solid #000;
         }
         .payment-terms {
-            margin-top: 25px;
-            font-size: 11px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 15px;
-        }
+    margin-top: 25px;
+    font-size: 14px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+}
         .beneficiary-section {
             margin-top: 20px;
-            font-size: 11px;
+            font-size: 14px;
             line-height: 1.8;
         }
         .beneficiary-label {
-            font-weight: bold;
+            
             text-transform: uppercase;
         }
         .beneficiary-info {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .signature-section {
-            margin-top: 40px;
+            margin-top: 10px;
             display: table;
             width: 100%;
         }
@@ -173,21 +201,26 @@
             vertical-align: bottom;
         }
         .signature-box {
-            display: inline-block;
-            border: 1px solid #000;
-            padding: 20px;
-            min-width: 150px;
-            min-height: 80px;
-            text-align: center;
-        }
+    display: inline-block;
+    padding: 10px 0;
+    text-align: center;
+}
         .signature-name {
-            margin-top: 40px;
+            margin-top: 10px;
             font-weight: bold;
         }
+.no-page-break {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+}
+html {
+    margin-bottom: 0;
+}
     </style>
 </head>
 <body>
     <!-- Company Header -->
+<div class="changshu-bor">
     <div class="company-header">
         <div class="company-name">{{ $proformaInvoice->seller->seller_name ?? 'COMPANY NAME' }}</div>
         @if($proformaInvoice->seller->address)
@@ -203,30 +236,42 @@
 
     <!-- Invoice Number and Date -->
     <div class="invoice-meta">
-        <div class="invoice-number">
-            <strong>INVOICE NO.:</strong>{{ $proformaInvoice->proforma_invoice_number }}
-        </div>
-        <div class="invoice-date">
-            <strong>Date:</strong> {{ $proformaInvoice->created_at->format('d-m-Y') }}
-        </div>
-    </div>
+    <table class="invoice-meta-table">
+        <tr>
+            <td class="invoice-meta-left">
+                INVOICE NO.: <strong>{{ $proformaInvoice->proforma_invoice_number }}</strong>
+            </td>
+            <td class="invoice-meta-right">
+                <strong>Date:</strong> {{ $proformaInvoice->created_at->format('d-m-Y') }}
+            </td>
+        </tr>
+    </table>
+</div>
+
 
     <!-- Recipient Information -->
-    <div class="recipient-section">
-        <div class="recipient-label">To</div>
-        <div class="recipient-box">
-            <div class="recipient-name">{{ $proformaInvoice->buyer_company_name }}</div>
-            <div class="recipient-address">
-                @if($proformaInvoice->billing_address)
-                    {{ $proformaInvoice->billing_address }}
-                @elseif($proformaInvoice->shipping_address)
-                    {{ $proformaInvoice->shipping_address }}
-                @else
-                    {{ $proformaInvoice->contract->contact_address ?? 'Address not provided' }}
-                @endif
-            </div>
-        </div>
-    </div>
+    <div class="recipient-box">
+    <table class="recipient-table">
+        <tr>
+            <td class="recipient-label-cell">To</td>
+            <td class="recipient-content-cell">
+                <div class="recipient-name">
+                    <strong>{{ $proformaInvoice->buyer_company_name }}</strong>
+                </div>
+                <div class="recipient-address">
+                    @if($proformaInvoice->billing_address)
+                        {{ $proformaInvoice->billing_address }}
+                    @elseif($proformaInvoice->shipping_address)
+                        {{ $proformaInvoice->shipping_address }}
+                    @else
+                        {{ $proformaInvoice->contract->contact_address ?? 'Address not provided' }}
+                    @endif
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
 
     <!-- Items Table -->
     <table class="items-table">
@@ -241,12 +286,34 @@
         <tbody>
             @php
                 $totalAmount = 0;
+                $totalAMC = 0;
             @endphp
             @foreach($proformaInvoice->proformaInvoiceMachines as $index => $piMachine)
                 @php
                     $contractMachine = $piMachine->contractMachine;
-                    $unitPrice = $piMachine->pi_price_plus_amc ?? ($piMachine->amount + ($piMachine->amc_price ?? 0));
-                    $lineTotal = $unitPrice * $piMachine->quantity;
+                    // AMC price is stored as TOTAL amount (not per unit), so use it directly
+                    $amcTotal = $piMachine->amc_price ?? 0;
+                    if($amcTotal > 0) {
+                        $totalAMC += $amcTotal;
+                    }
+                    
+                    // Use amount (unit price without AMC) for line total
+                    // If amount is not set, calculate from total_pi_price minus AMC
+                    if(isset($piMachine->amount) && $piMachine->amount > 0) {
+                        $unitPrice = $piMachine->amount;
+                        $lineTotal = $unitPrice * $piMachine->quantity;
+                    } elseif(isset($piMachine->total_pi_price) && $piMachine->total_pi_price > 0) {
+                        // Fallback: calculate from total_pi_price minus AMC
+                        $lineTotal = $piMachine->total_pi_price - $amcTotal;
+                    } else {
+                        // Last fallback: use pi_price_plus_amc minus AMC
+                        // Note: pi_price_plus_amc is per unit, so multiply by quantity first
+                        $unitPriceWithAmc = $piMachine->pi_price_plus_amc ?? 0;
+                        $totalWithAmc = $unitPriceWithAmc * $piMachine->quantity;
+                        $lineTotal = $totalWithAmc - $amcTotal;
+                    }
+                    // Ensure line total is not negative
+                    $lineTotal = max(0, $lineTotal);
                     $totalAmount += $lineTotal;
                     
                     // Build detailed description in specific format
@@ -309,6 +376,30 @@
                 <td colspan="3" class="summary-label">Total PI Price</td>
                 <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($totalAmount, 2) }}</td>
             </tr>
+            @if($totalAMC > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">AMC</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($totalAMC, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->overseas_freight ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">Overseas Freight Approx</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->overseas_freight, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->port_expenses_clearing ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">Port Exp + Clearing Exp Approx</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->port_expenses_clearing, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->gst_amount ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">GST Amount</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->gst_amount, 2) }}</td>
+            </tr>
+            @endif
             <tr class="summary-row final-amount-row">
                 <td colspan="3" class="summary-label">Final Amount</td>
                 <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->total_amount, 2) }}</td>
@@ -317,15 +408,10 @@
     </table>
 
     <!-- Payment Terms -->
-    @if($proformaInvoice->contract->payment_terms)
+   
     <div class="payment-terms">
-        PAYMENT TERMS: {{ strtoupper($proformaInvoice->contract->payment_terms) }}
+        PAYMENT TERMS: 10% TOKEN + 15% ADVANCE + 75% BEFORE SHIPMENT
     </div>
-    @else
-    <div class="payment-terms">
-        PAYMENT TERMS: 25% ADVANCE (PART PAYMENT ALLOWED) & 75% BALANCE BY T/T OR L/C BEFORE SHIPMENT
-    </div>
-    @endif
 
     <!-- Beneficiary Bank Details -->
     @if($proformaInvoice->seller->bankDetails->count() > 0)
@@ -360,18 +446,21 @@
             </div>
         </div>
     @endif
+</div>
 
     <!-- Signature Section -->
-    <div class="signature-section">
+    <div class="signature-section no-page-break">
         <div class="signature-left">
             <!-- Space for company seal/logo -->
             @if($proformaInvoice->seller->logo)
             <div class="signature-box">
-                <img src="{{ asset('storage/' . $proformaInvoice->seller->logo) }}" alt="Company Seal" style="max-width: 100%; max-height: 60px;">
+                <img src="{{ asset('storage/' . $proformaInvoice->seller->logo) }}" alt="Company Seal" style="max-width: 100%; max-height: 130px;">
+<div class="signature-name">Frank Ping</div>
             </div>
             @elseif($proformaInvoice->seller->signature)
             <div class="signature-box">
-                <img src="{{ asset('storage/' . $proformaInvoice->seller->signature) }}" alt="Signature" style="max-width: 100%; max-height: 60px;">
+                <img src="{{ asset('storage/' . $proformaInvoice->seller->signature) }}" alt="Signature" style="max-width: 100%; max-height: 130px;">
+<div class="signature-name">Frank Ping</div>
             </div>
             @else
             <div class="signature-box">
@@ -380,7 +469,7 @@
             @endif
         </div>
         <div class="signature-right">
-            <div class="signature-name">{{ $proformaInvoice->seller->seller_name ?? 'Authorized Signature' }}</div>
+            
         </div>
     </div>
 </body>

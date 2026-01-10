@@ -516,7 +516,7 @@
                                                     <div class="input-group">
                                                         <input type="number" 
                                                                :name="`machines[${index}][gst_percentage]`"
-                                                               x-model="machine.gst_percentage"
+                                                               x-model.number="machine.gst_percentage"
                                                                @input="calculateMachineFinalAmount(machine.tempId)"
                                                                step="0.01"
                                                                min="0"
@@ -529,7 +529,7 @@
                                                 </div>
 
                                                 <!-- GST Amount (calculated) -->
-                                                <div class="col-md-4" x-show="machine.contract_machine_id && machine.quantity > 0">
+                                                <div class="col-md-4" x-show="machine.contract_machine_id && machine.quantity > 0 && ((machine.gst_percentage !== undefined && machine.gst_percentage !== null && parseFloat(machine.gst_percentage) > 0) || (gstPercentage !== undefined && gstPercentage !== null && parseFloat(gstPercentage) > 0))">
                                                     <label class="form-label fw-semibold" style="color: #374151;">GST Amount</label>
                                                     <div class="form-control bg-light fw-semibold" style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                                         <span x-text="currencySymbol"></span><span x-text="getMachineGSTAmount(machine.tempId).toFixed(2)"></span>
@@ -940,7 +940,7 @@
                 amcPrice: 0,
                 overseasFreight: 0,
                 portExpensesClearing: 0,
-                gstPercentage: 18,
+                gstPercentage: null, // Don't set 0, leave empty by default
                 gstAmount: 0,
                 finalAmountWithGST: 0,
 
@@ -1056,7 +1056,7 @@
                         contractQuantityPerCategory: 0, // Original contract quantity for this category
                         overseas_freight: 0,
                         port_expenses_clearing: 0,
-                        gst_percentage: 18,
+                        gst_percentage: null, // Don't set 0, leave empty by default
                         brand_id: '',
                         machine_model_id: '',
                         feeder_id: '',
@@ -1228,7 +1228,7 @@
                     this.updateAvailableQuantity(machine.tempId);
                     machine.overseas_freight = 0; // Initialize overseas freight
                     machine.port_expenses_clearing = 0; // Initialize port expenses
-                    machine.gst_percentage = 18; // Initialize GST percentage
+                    machine.gst_percentage = null; // Don't set 0, leave empty by default
                     
                     // Load category items for this machine's category FIRST
                     if (machine.machine_category_id) {
@@ -1576,8 +1576,18 @@
                     const amcPrice = parseFloat(machine.amc_price) || 0;
                     const piTotalAmount = piMachineAmount + amcPrice;
                     
+                    // Get GST percentage - use machine level if set and > 0, otherwise use PI-level
+                    let gstPercent = 0;
+                    if (machine.gst_percentage !== undefined && machine.gst_percentage !== null && machine.gst_percentage !== '' && parseFloat(machine.gst_percentage) > 0) {
+                        gstPercent = parseFloat(machine.gst_percentage);
+                    } else if (this.gstPercentage !== undefined && this.gstPercentage !== null && this.gstPercentage !== '' && parseFloat(this.gstPercentage) > 0) {
+                        gstPercent = parseFloat(this.gstPercentage);
+                    }
+                    
+                    // If GST percentage is 0 or not set, return 0
+                    if (gstPercent <= 0) return 0;
+                    
                     // GST Amount = (PI Machine Amount + AMC Price) × GST Per
-                    const gstPercent = parseFloat(machine.gst_percentage) || 0;
                     return (piTotalAmount * gstPercent) / 100;
                 },
 
